@@ -59,13 +59,13 @@ export default function HomePage() {
     {showSearch || active === "search" ? <section className="search-panel"><input className="search-input" autoFocus placeholder="Tìm tên phim, diễn viên..." value={search} onChange={e=>setSearch(e.target.value)} /><p className="search-hint">{search.trim() ? `Kết quả cho “${search}”` : "Tìm bộ phim bạn muốn xem"}</p><div className="movie-row">{searchResults.map(movie=><MovieCard key={movie.id} movie={movie}/>)}</div></section> : <>
       {hero && <section className="hero hero-cinema" aria-label="Phim nổi bật">
         <div className="hero-image" key={hero.id} style={{backgroundImage:`url("${hero.backdrop || hero.poster}")`}}/>
-        <div className="hero-topline"><span className="hero-kicker">PHIM NỔI BẬT</span><span className="hero-count">{String(heroIndex+1).padStart(2,"0")} <i>/</i> {String(heroMovies.length).padStart(2,"0")}</span></div>
+        <div className="hero-topline"><span className="hero-kicker">PHIM ĐANG ĐƯỢC QUAN TÂM</span><span className="hero-count">{String(heroIndex+1).padStart(2,"0")} <i>/</i> {String(heroMovies.length).padStart(2,"0")}</span></div>
         <div className="hero-content">
-          <span className="eyebrow">ĐỀ XUẤT HÔM NAY</span>
+          <span className="eyebrow"><i className="hero-live-dot"/> NỔI BẬT HÔM NAY</span>
           <h1>{hero.name}</h1>
           <div className="hero-meta"><span>{hero.year || "Mới"}</span><i className="meta-dot"/><span>{hero.quality || "HD"}</span><i className="meta-dot"/><span>{hero.language || "Vietsub"}</span></div>
           <p className="hero-desc">{hero.originName || "Khám phá bộ phim nổi bật hôm nay."}</p>
-          <div className="hero-actions"><a className="primary-btn" href={`/phim/${hero.slug}`}><Play size={16} fill="currentColor"/> Xem phim</a></div>
+          <div className="hero-actions"><a className="primary-btn" href={`/phim/${hero.slug}`}><Play size={16} fill="currentColor"/> Xem ngay</a><a className="hero-detail-btn" href={`/phim/${hero.slug}`}>Thông tin phim <span>›</span></a></div>
           <div className="hero-thumbnails" aria-label="Chọn phim nổi bật">{heroMovies.map((movie,index)=><button key={movie.id} className={`hero-thumb ${index===heroIndex?"active":""}`} onClick={()=>setHeroIndex(index)} aria-label={`Xem giới thiệu ${movie.name}`} aria-pressed={index===heroIndex}><img src={movie.backdrop || movie.poster} alt="" loading="lazy"/><span/></button>)}</div>
         </div>
       </section>}
@@ -157,6 +157,33 @@ export default function HomePage() {
       @keyframes heroReveal{from{opacity:.7;transform:scale(1.035)}to{opacity:1;transform:scale(1.015)}}
       @media(min-width:700px){.app-shell{max-width:980px;margin:auto}.topbar{padding:0 28px}.hero.hero-cinema{height:760px;min-height:760px;border-radius:0 0 16px 16px;margin:0 16px}.hero-cinema .hero-content{left:34px;bottom:38px}.hero-topline{left:34px;right:34px}.hero-thumb{height:48px;max-width:82px}.movie-row,.fresh-row,.series-row{grid-auto-columns:290px;padding-left:25px;padding-right:25px}.section-head{padding:0 25px}.poster-row,.landscape-row{padding-left:25px;padding-right:25px}.ranked-list{padding-left:25px;padding-right:25px}}
       @media(max-width:380px){.hero.hero-cinema{min-height:610px}.hero-cinema .hero-content{bottom:calc(18px + env(safe-area-inset-bottom))}.hero-thumb{height:36px}}
+
+      /* FPT Play-inspired cinematic hero refresh */
+      .hero.hero-cinema{height:clamp(470px,66vw,650px);min-height:470px;max-height:650px;margin:0 14px;border-radius:0 0 22px 22px;background:#10131b;overflow:hidden}
+      .hero-cinema .hero-image{inset:0;background-size:cover;background-position:center 30%;transform:scale(1.01);animation:heroReveal .55s ease both}
+      .hero-cinema:before{background:linear-gradient(90deg,rgba(5,8,15,.94) 0%,rgba(5,8,15,.78) 30%,rgba(5,8,15,.24) 66%,rgba(5,8,15,.05) 100%),linear-gradient(0deg,rgba(5,8,15,.8) 0%,transparent 45%,rgba(5,8,15,.28) 100%)}
+      .hero-topline{top:82px;left:26px;right:26px;justify-content:flex-start;gap:12px;letter-spacing:1.3px;color:#f5f6fa}
+      .hero-kicker{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:4px;background:rgba(7,11,20,.48);border:1px solid rgba(255,255,255,.18);font-size:9px}
+      .hero-count{margin-left:auto;font-size:10px}
+      .hero-cinema .hero-content{left:28px;right:auto;bottom:34px;width:min(490px,58%);max-width:490px}
+      .hero-cinema .eyebrow{display:flex;align-items:center;gap:8px;color:#f3f4f7;font-size:10px;letter-spacing:1.5px}
+      .hero-live-dot{width:7px;height:7px;border-radius:50%;background:#ed2939;box-shadow:0 0 0 4px rgba(237,41,57,.15)}
+      .hero-cinema h1{font-size:clamp(30px,5vw,52px);line-height:1.06;letter-spacing:-1.3px;margin:12px 0;color:#fff;max-width:470px;text-wrap:balance}
+      .hero-cinema .hero-meta{gap:10px;color:#e1e4ea;font-size:12px}
+      .hero-cinema .meta-dot{background:#b6bdc9}
+      .hero-cinema .hero-desc{max-width:430px;margin:13px 0 20px;color:rgba(245,247,251,.82);font-size:13px;line-height:1.55;-webkit-line-clamp:2}
+      .hero-cinema .hero-actions{display:flex;align-items:center;gap:12px}
+      .hero-cinema .primary-btn{height:46px;min-width:142px;padding:0 22px;border-radius:7px;background:#ed2939!important;color:#fff!important;font-size:13px;box-shadow:0 7px 24px rgba(237,41,57,.25)!important}
+      .hero-detail-btn{height:46px;padding:0 16px;display:inline-flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.35);border-radius:7px;background:rgba(12,17,27,.28);color:#fff;font-size:12px;font-weight:750;backdrop-filter:blur(12px)}
+      .hero-detail-btn span{font-size:22px;line-height:1}
+      .hero-thumbnails{display:flex;gap:7px;align-items:center;margin-top:25px;max-width:100%;overflow-x:auto;padding:3px 2px 5px}
+      .hero-thumb{flex:0 0 74px;max-width:74px;height:43px;border:1px solid rgba(255,255,255,.28);border-radius:5px;opacity:.58;transform:none}
+      .hero-thumb.active{opacity:1;border:2px solid #ed2939;transform:translateY(-2px)}
+      .hero-thumb.active:after{background:linear-gradient(0deg,rgba(237,41,57,.2),transparent)}
+      .section{margin-top:24px}
+      @media(min-width:700px){.hero.hero-cinema{margin:0 18px;border-radius:0 0 20px 20px;height:clamp(520px,58vw,680px);max-height:680px}.hero-cinema .hero-content{left:42px;bottom:42px}.hero-topline{left:42px;right:42px}.hero-thumb{flex-basis:88px;max-width:88px;height:50px}}
+      @media(max-width:600px){.hero.hero-cinema{height:570px;min-height:570px;max-height:610px;margin:0;border-radius:0 0 16px 16px}.hero-cinema .hero-image{background-position:center 25%}.hero-cinema:before{background:linear-gradient(90deg,rgba(5,8,15,.72),rgba(5,8,15,.12) 100%),linear-gradient(0deg,#05080f 0%,rgba(5,8,15,.9) 19%,rgba(5,8,15,.08) 68%,rgba(5,8,15,.32) 100%)}.hero-topline{top:76px;left:18px;right:18px}.hero-cinema .hero-content{left:19px;right:19px;bottom:22px;width:auto;max-width:none}.hero-cinema h1{font-size:clamp(29px,8vw,39px);max-width:100%;margin:9px 0}.hero-cinema .hero-desc{font-size:11px;margin:9px 0 14px;max-width:100%}.hero-cinema .primary-btn,.hero-detail-btn{height:43px}.hero-thumbnails{margin-top:17px;gap:6px}.hero-thumb{flex-basis:58px;max-width:58px;height:37px}}
+
     `}</style>
 
     <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock">{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?active==="home"&&category===item.id:active==="search";return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory(item.id==="home"?"phim-moi-cap-nhat":item.id);window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
