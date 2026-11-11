@@ -191,6 +191,7 @@ body{background:#000!important}
 @media(min-width:700px){.hero{margin:8px 18px 0;border-radius:18px}.topbar{background:rgba(0,0,0,.86)}}
 
     `}</style>
-\n    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock">{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?active==="home"&&category===item.id:active==="search";return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory(item.id==="home"?"phim-moi-cap-nhat":item.id);window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
+
+    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock">{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?active==="home"&&category===item.id:active==="search";return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory(item.id==="home"?"phim-moi-cap-nhat":item.id);window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
   </main>;
 }
