@@ -53,7 +53,7 @@ export default function HomePage() {
   const nav = [{id:"home",label:"Khám phá",icon:Home},{id:"phim-le",label:"Phim lẻ",icon:Clapperboard},{id:"phim-bo",label:"Phim bộ",icon:Film},{id:"search",label:"Tìm kiếm",icon:Search}];
 
   return <main className="app-shell">
-    <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><Clapperboard size={17}/></span><span>PHIM<span style={{color:"#b99bff"}}> LẬU</span></span></a><div className="top-actions"><button className="icon-button" aria-label="Tìm kiếm" onClick={() => {setShowSearch(true);setActive("search");}}><Search size={18}/></button><button className="icon-button" aria-label="Thông báo"><Bell size={18}/></button></div></header>
+    <header className="topbar"><a className="brand" href="/"><span>Trang chủ</span></a><div className="top-actions"><button className="icon-button" aria-label="Thông báo"><Bell size={18}/></button></div></header>
     {showSearch || active === "search" ? <section className="search-panel"><input className="search-input" autoFocus placeholder="Tìm tên phim, diễn viên..." value={search} onChange={e=>setSearch(e.target.value)} /><p className="search-hint">{search.trim() ? `Kết quả cho “${search}”` : "Tìm bộ phim bạn muốn xem"}</p><div className="movie-row">{searchResults.map(movie=><MovieCard key={movie.id} movie={movie}/>)}</div></section> : <>
       {hero && <section className="hero"><div className="hero-image" style={{backgroundImage:`url("${hero.backdrop || hero.poster}")`}}/><div className="hero-content"><span className="eyebrow"><Sparkles size={12}/> ĐỀ XUẤT HÔM NAY</span><h1>{hero.name}</h1><div className="hero-meta"><span>{hero.year || "Mới"}</span><i className="meta-dot"/><span>{hero.quality}</span><i className="meta-dot"/><span>{hero.language}</span></div><p className="hero-desc">{hero.originName}</p><div className="hero-actions"><a className="primary-btn" href={`/phim/${hero.slug}`}><Play size={16} fill="currentColor"/> Xem ngay</a></div></div></section>}
       <section className="section"><div className="section-head"><h2 className="section-title">Khám phá phim</h2><span className="section-link">Vuốt để xem thêm</span></div><div className="chips">{categories.map(c=><button key={c.type} className={`chip ${category===c.type?"active":""}`} onClick={()=>setCategory(c.type)}>{c.label}</button>)}</div></section>
@@ -89,7 +89,6 @@ export default function HomePage() {
       .rank-copy span{color:#c3aaff;font-size:9px;font-weight:750}
       .rank-play{color:#b99bff}
       @media(min-width:700px){.poster-row,.landscape-row{padding-left:25px;padding-right:25px}.ranked-list{padding-left:25px;padding-right:25px}}
-\n
       .fresh-row,.series-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0, min(290px, calc(100vw - 52px)));gap:12px;overflow-x:auto;overflow-y:hidden;align-items:stretch;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:0 18px 12px;scrollbar-width:none}
       .fresh-row::-webkit-scrollbar,.series-row::-webkit-scrollbar{display:none}
       .fresh-row>.appstore-movie,.series-row>.appstore-movie{width:100%;min-width:0;max-width:100%;height:142px;min-height:142px;box-sizing:border-box;overflow:hidden}
