@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, Clapperboard, Film, Flame, Home, Play, Search, Sparkles } from "lucide-react";
+import { Bell, Clapperboard, Film, Flame, Home, Play, Search } from "lucide-react";
 
 type Movie = { id: string; slug: string; name: string; originName: string; poster: string; backdrop: string; year: number | null; quality: string; language: string; currentEpisode: string; rating: number | null };
 type Feed = { status: boolean; items: Movie[] };
@@ -36,6 +36,7 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
 
   const load = useCallback(async (type: string) => {
     setLoading(true);
@@ -48,14 +49,26 @@ export default function HomePage() {
   useEffect(() => { let alive = true; const types = ["phim-le", "phim-bo", "hoat-hinh", "tv-shows"]; Promise.all(types.map(async type => { try { const r = await fetch(`/api/movies?type=${type}`); const d = await r.json() as Feed; return [type, d.items || []] as const; } catch { return [type, []] as const; } })).then(rows => { if (alive) setShelves(Object.fromEntries(rows)); }); return () => { alive = false; }; }, []);
   useEffect(() => { if (!search.trim()) { setSearchResults([]); return; } const timer = window.setTimeout(() => { fetch(`/api/movies?q=${encodeURIComponent(search.trim())}`).then(r => r.json()).then((d: Feed) => setSearchResults(d.items || [])).catch(() => setSearchResults([])); }, 350); return () => window.clearTimeout(timer); }, [search]);
 
-  const hero = useMemo(() => fresh[0], [fresh]);
-  const featured = fresh.slice(1, 13);
+  const heroMovies = useMemo(() => fresh.slice(0, 6), [fresh]);
+  const hero = heroMovies[heroIndex] || heroMovies[0];
+  const featured = fresh.slice(6, 18);
   const nav = [{id:"home",label:"Khám phá",icon:Home},{id:"phim-le",label:"Phim lẻ",icon:Clapperboard},{id:"phim-bo",label:"Phim bộ",icon:Film},{id:"search",label:"Tìm kiếm",icon:Search}];
 
   return <main className="app-shell">
-    <header className="topbar"><a className="brand" href="/"><span>Trang chủ</span></a><div className="top-actions"><button className="icon-button" aria-label="Thông báo"><Bell size={18}/></button></div></header>
+    <header className="topbar"><a className="brand" href="/"><span>PHIM LẬU</span></a><div className="top-actions"><button className="icon-button" aria-label="Thông báo"><Bell size={18}/></button></div></header>
     {showSearch || active === "search" ? <section className="search-panel"><input className="search-input" autoFocus placeholder="Tìm tên phim, diễn viên..." value={search} onChange={e=>setSearch(e.target.value)} /><p className="search-hint">{search.trim() ? `Kết quả cho “${search}”` : "Tìm bộ phim bạn muốn xem"}</p><div className="movie-row">{searchResults.map(movie=><MovieCard key={movie.id} movie={movie}/>)}</div></section> : <>
-      {hero && <section className="hero"><div className="hero-image" style={{backgroundImage:`url("${hero.backdrop || hero.poster}")`}}/><div className="hero-content"><span className="eyebrow"><Sparkles size={12}/> ĐỀ XUẤT HÔM NAY</span><h1>{hero.name}</h1><div className="hero-meta"><span>{hero.year || "Mới"}</span><i className="meta-dot"/><span>{hero.quality}</span><i className="meta-dot"/><span>{hero.language}</span></div><p className="hero-desc">{hero.originName}</p><div className="hero-actions"><a className="primary-btn" href={`/phim/${hero.slug}`}><Play size={16} fill="currentColor"/> Xem ngay</a></div></div></section>}
+      {hero && <section className="hero hero-cinema" aria-label="Phim nổi bật">
+        <div className="hero-image" key={hero.id} style={{backgroundImage:`url("${hero.backdrop || hero.poster}")`}}/>
+        <div className="hero-topline"><span className="hero-kicker">PHIM NỔI BẬT</span><span className="hero-count">{String(heroIndex+1).padStart(2,"0")} <i>/</i> {String(heroMovies.length).padStart(2,"0")}</span></div>
+        <div className="hero-content">
+          <span className="eyebrow">ĐỀ XUẤT HÔM NAY</span>
+          <h1>{hero.name}</h1>
+          <div className="hero-meta"><span>{hero.year || "Mới"}</span><i className="meta-dot"/><span>{hero.quality || "HD"}</span><i className="meta-dot"/><span>{hero.language || "Vietsub"}</span></div>
+          <p className="hero-desc">{hero.originName || "Khám phá bộ phim nổi bật hôm nay."}</p>
+          <div className="hero-actions"><a className="primary-btn" href={`/phim/${hero.slug}`}><Play size={16} fill="currentColor"/> Xem phim</a></div>
+          <div className="hero-thumbnails" aria-label="Chọn phim nổi bật">{heroMovies.map((movie,index)=><button key={movie.id} className={`hero-thumb ${index===heroIndex?"active":""}`} onClick={()=>setHeroIndex(index)} aria-label={`Xem giới thiệu ${movie.name}`} aria-pressed={index===heroIndex}><img src={movie.backdrop || movie.poster} alt="" loading="lazy"/><span/></button>)}</div>
+        </div>
+      </section>}
       <section className="section"><div className="section-head"><h2 className="section-title">Khám phá phim</h2><span className="section-link">Vuốt để xem thêm</span></div><div className="chips">{categories.map(c=><button key={c.type} className={`chip ${category===c.type?"active":""}`} onClick={()=>setCategory(c.type)}>{c.label}</button>)}</div></section>
       <section className="section"><div className="section-head"><h2 className="section-title"><Flame size={16} style={{display:"inline",verticalAlign:"-3px",color:"#b99bff"}}/> {categories.find(c=>c.type===category)?.label || "Phim mới"}</h2><a className="section-link" href="/danh-sach">Xem tất cả</a></div><div className={`movie-row ${category === "phim-bo" ? "series-row" : "fresh-row"}`}>{loading ? Array.from({length:5},(_,i)=><div className="appstore-skeleton" key={i}><div className="appstore-skeleton-art"/><div className="appstore-skeleton-copy"><i/><i/><i/><i/></div></div>) : movies.slice(0,18).map(movie=><MovieCard key={movie.id} movie={movie}/>)}</div>{!loading && movies.length===0 && <p className="empty-state">Chưa tải được danh sách phim. Hãy thử lại sau.</p>}</section>
       {featured.length>0 && <section className="section"><div className="section-head"><h2 className="section-title">Vừa cập nhật</h2><span className="section-link">Mới nhất</span></div><div className="poster-row">{featured.map(movie=><PosterCard key={movie.id} movie={movie}/>)}</div></section>}
@@ -67,129 +80,83 @@ export default function HomePage() {
       .poster-row,.landscape-row{display:grid;grid-auto-flow:column;grid-auto-columns:132px;gap:13px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:0 18px 12px;scrollbar-width:none}
       .poster-row::-webkit-scrollbar,.landscape-row::-webkit-scrollbar{display:none}
       .poster-card{min-width:0;display:flex;flex-direction:column;gap:7px;scroll-snap-align:start;text-decoration:none}
-      .poster-art{height:190px;position:relative;overflow:hidden;border-radius:15px;background:linear-gradient(145deg,#302746,#171321);box-shadow:0 8px 20px #0004}
+      .poster-art{height:190px;position:relative;overflow:hidden;border-radius:12px;background:#202020}
       .poster-art img,.rank-poster img{width:100%;height:100%;object-fit:cover;display:block}
-      .poster-art>span{position:absolute;top:7px;left:7px;padding:4px 6px;border-radius:6px;background:#100d1dcc;color:#fff;font-size:8px;font-weight:850}
-      .poster-art>button{position:absolute;right:8px;bottom:8px;width:32px;height:32px;border:1px solid #ffffff55;border-radius:50%;background:#a987f0e8;color:#1a102c;display:grid;place-items:center}
-      .poster-card strong,.landscape-copy strong{color:#f5f1ff;font-size:12px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-      .poster-card small,.landscape-copy small{color:#aaa2b8;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .poster-art>span{position:absolute;top:7px;left:7px;padding:4px 6px;border-radius:5px;background:#000c;color:#fff;font-size:8px;font-weight:850}
+      .poster-art>button{position:absolute;right:8px;bottom:8px;width:32px;height:32px;border:1px solid #ffffff55;border-radius:50%;background:#eee;color:#111;display:grid;place-items:center}
+      .poster-card strong,.landscape-copy strong{color:#f5f5f5;font-size:12px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      .poster-card small,.landscape-copy small{color:#999;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .landscape-row{grid-auto-columns:230px}
-      .landscape-card{overflow:hidden;border:1px solid #ffffff12;border-radius:17px;background:#1b1727;scroll-snap-align:start;text-decoration:none}
-      .landscape-art{height:128px;position:relative;background:#292239}
+      .landscape-card{overflow:hidden;border:1px solid #292929;border-radius:12px;background:#171717;scroll-snap-align:start;text-decoration:none}
+      .landscape-art{height:128px;position:relative;background:#222}
       .landscape-art img{width:100%;height:100%;object-fit:cover;display:block}
-      .landscape-art>span{position:absolute;left:8px;bottom:8px;padding:5px 8px;border-radius:7px;background:#100d1dcc;color:#eee7ff;font-size:9px;font-weight:750}
+      .landscape-art>span{position:absolute;left:8px;bottom:8px;padding:5px 8px;border-radius:5px;background:#000c;color:#eee;font-size:9px;font-weight:750}
       .landscape-copy{padding:10px 11px 12px;display:flex;flex-direction:column;gap:5px}
       .ranked-list{display:flex;flex-direction:column;gap:9px;padding:0 18px 8px}
-      .ranked-card{display:grid;grid-template-columns:34px 54px minmax(0,1fr) 24px;align-items:center;gap:10px;min-height:78px;padding:7px 10px;border:1px solid #ffffff10;border-radius:15px;background:linear-gradient(110deg,#211b30,#171421);text-decoration:none}
-      .rank-number{font-size:19px;font-weight:900;font-style:italic;color:#a987ff;letter-spacing:-1px}
-      .rank-poster{height:64px;width:54px;overflow:hidden;border-radius:9px;background:#302746}
+      .ranked-card{display:grid;grid-template-columns:34px 54px minmax(0,1fr) 24px;align-items:center;gap:10px;min-height:78px;padding:7px 10px;border:1px solid #292929;border-radius:12px;background:#171717;text-decoration:none}
+      .rank-number{font-size:19px;font-weight:900;font-style:italic;color:#eee;letter-spacing:-1px}
+      .rank-poster{height:64px;width:54px;overflow:hidden;border-radius:8px;background:#222}
       .rank-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
-      .rank-copy strong{color:#f6f1ff;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .rank-copy small{color:#a9a0b8;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .rank-copy span{color:#c3aaff;font-size:9px;font-weight:750}
-      .rank-play{color:#b99bff}
-      @media(min-width:700px){.poster-row,.landscape-row{padding-left:25px;padding-right:25px}.ranked-list{padding-left:25px;padding-right:25px}}
-      .fresh-row,.series-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0, min(290px, calc(100vw - 52px)));gap:12px;overflow-x:auto;overflow-y:hidden;align-items:stretch;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:0 18px 12px;scrollbar-width:none}
+      .rank-copy strong{color:#f6f6f6;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .rank-copy small{color:#999;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .rank-copy span,.rank-play{color:#ddd;font-size:9px;font-weight:750}
+      .fresh-row,.series-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,min(290px,calc(100vw - 52px)));gap:12px;overflow-x:auto;overflow-y:hidden;align-items:stretch;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:0 18px 12px;scrollbar-width:none}
       .fresh-row::-webkit-scrollbar,.series-row::-webkit-scrollbar{display:none}
       .fresh-row>.appstore-movie,.series-row>.appstore-movie{width:100%;min-width:0;max-width:100%;height:142px;min-height:142px;box-sizing:border-box;overflow:hidden}
       .fresh-row .appstore-artwork,.series-row .appstore-artwork{width:88px;height:122px;flex:none}
       .fresh-row .appstore-copy,.series-row .appstore-copy{min-width:0;max-width:100%;overflow:hidden}
-      .appstore-skeleton{width:100%;height:142px;min-width:0;padding:10px;display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;box-sizing:border-box;border:1px solid rgba(255,255,255,.07);border-radius:19px;background:linear-gradient(145deg,#211d30,#151321);overflow:hidden;scroll-snap-align:start}
-      .appstore-skeleton-art{height:122px;width:88px;border-radius:13px;background:linear-gradient(100deg,#242037 25%,#39314f 45%,#242037 65%);background-size:220% 100%;animation:shimmer 1.3s infinite}
+      .appstore-skeleton{width:100%;height:142px;min-width:0;padding:10px;display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;box-sizing:border-box;border:1px solid #292929;border-radius:14px;background:#171717;overflow:hidden;scroll-snap-align:start}
+      .appstore-skeleton-art{height:122px;width:88px;border-radius:10px;background:linear-gradient(100deg,#202020 25%,#303030 45%,#202020 65%);background-size:220% 100%;animation:shimmer 1.3s infinite}
       .appstore-skeleton-copy{display:flex;flex-direction:column;gap:10px;padding-top:9px;min-width:0}
-      .appstore-skeleton-copy i{height:8px;border-radius:8px;background:linear-gradient(100deg,#28243a 25%,#403753 45%,#28243a 65%);background-size:220% 100%;animation:shimmer 1.3s infinite}
-      .appstore-skeleton-copy i:nth-child(1){width:82%;height:11px}
-      .appstore-skeleton-copy i:nth-child(2){width:95%}
-      .appstore-skeleton-copy i:nth-child(3){width:58%}
-      .appstore-skeleton-copy i:nth-child(4){width:70%;height:6px}
-      .shelf-loading{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0, min(290px, calc(100vw - 52px)));gap:12px;overflow:hidden;padding:0 18px 12px}
+      .appstore-skeleton-copy i{height:8px;border-radius:8px;background:linear-gradient(100deg,#202020 25%,#303030 45%,#202020 65%);background-size:220% 100%;animation:shimmer 1.3s infinite}
+      .appstore-skeleton-copy i:nth-child(1){width:82%;height:11px}.appstore-skeleton-copy i:nth-child(2){width:95%}.appstore-skeleton-copy i:nth-child(3){width:58%}.appstore-skeleton-copy i:nth-child(4){width:70%;height:6px}
+      .shelf-loading{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(268px,290px);gap:12px;overflow:hidden;padding:0 18px 12px}
       .shelf-loading .appstore-skeleton{width:100%}
-      @media(min-width:700px){.fresh-row,.series-row,.shelf-loading{grid-auto-columns:290px;padding-left:25px;padding-right:25px}}
-
       .movie-row{grid-auto-columns:minmax(268px,290px);gap:12px;padding:0 18px 10px}
-      .appstore-movie{width:100%;min-height:142px;padding:10px;display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;align-items:center;border-radius:19px;border:1px solid rgba(255,255,255,.085);background:linear-gradient(145deg,rgba(31,28,46,.94),rgba(18,16,29,.96));box-shadow:0 7px 22px rgba(0,0,0,.14);scroll-snap-align:start;transition:transform .2s,border-color .2s}
-      .appstore-movie:active{transform:scale(.975);border-color:rgba(183,151,255,.38)}
-      .appstore-artwork{height:122px;width:88px;position:relative;overflow:hidden;border-radius:13px;background:linear-gradient(145deg,#302746,#171321);box-shadow:0 5px 15px rgba(0,0,0,.3)}
+      .appstore-movie{width:100%;min-height:142px;padding:10px;display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;align-items:center;border-radius:14px;border:1px solid #292929;background:#171717;box-shadow:none;scroll-snap-align:start;transition:transform .2s,border-color .2s}
+      .appstore-movie:active{transform:scale(.985);border-color:#777}
+      .appstore-artwork{height:122px;width:88px;position:relative;overflow:hidden;border-radius:10px;background:#222;box-shadow:none}
       .appstore-artwork img{width:100%;height:100%;object-fit:cover;display:block}
-      .artwork-fallback{height:100%;display:grid;place-items:center;color:#c6adff}
-      .appstore-quality{position:absolute;left:6px;top:6px;padding:4px 6px;border-radius:6px;background:rgba(9,8,18,.78);color:#eee5ff;font-size:8px;font-weight:850;backdrop-filter:blur(9px)}
+      .artwork-fallback{height:100%;display:grid;place-items:center;color:#ddd}
+      .appstore-quality{position:absolute;left:6px;top:6px;padding:4px 6px;border-radius:5px;background:#000b;color:#fff;font-size:8px;font-weight:850}
       .appstore-copy{min-width:0;display:flex;flex-direction:column;align-items:flex-start}
       .appstore-title-row{width:100%;display:flex;align-items:flex-start;justify-content:space-between;gap:7px}
-      .appstore-name{min-width:0;margin:0;color:#f7f4ff;font-size:13px;line-height:1.3;font-weight:780;letter-spacing:-.2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-      .appstore-open{flex:none;padding:6px 12px;border-radius:999px;background:linear-gradient(110deg,#b18cff,#8055ef);color:#190f2d;font-size:10px;font-weight:850;box-shadow:0 3px 10px rgba(142,101,255,.2)}
-      .appstore-original{width:100%;margin:6px 0 8px;color:#aaa3bb;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .appstore-meta{display:flex;align-items:center;gap:7px;color:#d2cce0;font-size:9px;font-weight:650}
-      .appstore-meta i{width:3px;height:3px;border-radius:50%;background:#9a8ab7}
-      .appstore-kind{display:flex;align-items:center;gap:5px;margin-top:10px;color:#a99abf;font-size:8px;font-weight:850;letter-spacing:1px}
-      .appstore-kind-dot{width:5px;height:5px;border-radius:50%;background:#a987ff;box-shadow:0 0 8px #a987ff}
-      .shelf-loading{grid-auto-columns:minmax(268px,290px)}
-      .shelf-loading .loading-card{width:100%;height:142px;aspect-ratio:auto;border-radius:19px}
-      @media(min-width:700px){.movie-row{grid-auto-columns:290px;padding-left:25px;padding-right:25px}}
-
-/* Minimal monochrome movie-app direction */
-:root{color-scheme:dark;--bg:#000;--surface:#171717;--surface-2:#222;--text:#f5f5f5;--muted:#969696;--purple:#f2f2f2;--purple-2:#d8d8d8;--line:rgba(255,255,255,.1)}
-html,body{background:#000!important;color:#f5f5f5}
-body{background:#000!important}
-.app-shell{background:#000}
-.topbar{background:rgba(0,0,0,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
-.brand-mark{background:transparent!important;box-shadow:none!important;color:#fff!important}
-.brand>span:last-child span{color:#fff!important}
-.icon-button{background:#171717;border-color:#303030;color:#eee}
-.hero{margin:0;min-height:470px;height:min(67vh,610px);border-radius:0 0 20px 20px;background:#171717}
-.hero:before{background:linear-gradient(0deg,#000 0%,rgba(0,0,0,.88) 18%,rgba(0,0,0,.2) 65%,rgba(0,0,0,.08) 100%),linear-gradient(90deg,rgba(0,0,0,.28),transparent 85%)}
-.eyebrow{color:#d0d0d0}
-.hero-meta,.hero-desc{color:#c4c4c4}
-.meta-dot{background:#777}
-.primary-btn{background:#f1f1f1!important;color:#111!important;box-shadow:none!important;border-radius:999px!important}
-.secondary-btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.14)}
-.section{margin-top:25px}
-.section-title{color:#f5f5f5}
-.section-link{color:#aaa}
-.section-title svg{color:#eee!important}
-.chip{background:#171717;color:#bdbdbd;border-color:#303030}
-.chip.active{background:#f1f1f1;color:#111;border-color:#f1f1f1}
-.poster-art{background:#202020;box-shadow:none}
-.poster-art>button{background:#f1f1f1;color:#111;border-color:#fff}
-.poster-card strong,.landscape-copy strong{color:#f4f4f4}
-.poster-card small,.landscape-copy small{color:#929292}
-.landscape-card{background:#171717;border-color:#292929;border-radius:14px}
-.landscape-art{background:#222}
-.ranked-card{background:#171717;border-color:#292929;border-radius:13px}
-.rank-number,.rank-copy span,.rank-play{color:#eee}
-.rank-poster{background:#222}
-.appstore-movie{background:#181818;border-color:#292929;box-shadow:none;border-radius:16px}
-.appstore-movie:active{border-color:#777}
-.appstore-artwork{background:#222;box-shadow:none;border-radius:11px}
-.appstore-quality{background:rgba(0,0,0,.72);color:#fff}
-.artwork-fallback{color:#ddd}
-.appstore-name{color:#f4f4f4}
-.appstore-open{background:#eaeaea;color:#111;box-shadow:none}
-.appstore-original{color:#999}
-.appstore-meta{color:#c0c0c0}
-.appstore-kind{color:#929292}
-.appstore-kind-dot{background:#aaa;box-shadow:none}
-.appstore-skeleton{background:#171717;border-color:#292929}
-.appstore-skeleton-art,.appstore-skeleton-copy i{background:linear-gradient(100deg,#202020 25%,#303030 45%,#202020 65%);background-size:220% 100%}
-.dock-wrap{padding-left:16px;padding-right:16px}
-.dock{background:rgba(31,31,31,.88);border:1px solid rgba(255,255,255,.13);box-shadow:0 8px 28px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);backdrop-filter:blur(24px) saturate(1.1);-webkit-backdrop-filter:blur(24px) saturate(1.1);border-radius:24px}
-.dock-item{color:#a8a8a8}
-.dock-item.active{color:#fff;background:rgba(255,255,255,.11);box-shadow:none}
-.dock-item.active svg{filter:none}
-.search-input{background:#171717;border-color:#303030;color:#fff}
-.search-input:focus{border-color:#888}
-.search-hint,.detail-info{color:#aaa}
-.detail-back{color:#ddd}
-.detail-cover{background-color:#171717;border-radius:18px}
-.detail-cover:after{background:linear-gradient(0deg,#000,transparent 90%)}
-.detail-play .primary-btn{background:#f1f1f1;color:#111}
-.watch-section{background:#151515;border-color:#292929;box-shadow:none;border-radius:16px}
-.watch-kicker{color:#bbb}
-.watch-live{background:#242424;color:#ddd}
-.change-episode{background:#222;color:#eee}
-.detail-error{color:#aaa}
-.search-panel{background:#000}
-@media(min-width:700px){.hero{margin:8px 18px 0;border-radius:18px}.topbar{background:rgba(0,0,0,.86)}}
-
+      .appstore-name{min-width:0;margin:0;color:#f7f7f7;font-size:13px;line-height:1.3;font-weight:780;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      .appstore-open{flex:none;padding:6px 12px;border-radius:999px;background:#eee;color:#111;font-size:10px;font-weight:850;box-shadow:none}
+      .appstore-original{width:100%;margin:6px 0 8px;color:#999;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .appstore-meta{display:flex;align-items:center;gap:7px;color:#c0c0c0;font-size:9px;font-weight:650}.appstore-meta i{width:3px;height:3px;border-radius:50%;background:#777}
+      .appstore-kind{display:flex;align-items:center;gap:5px;margin-top:10px;color:#929292;font-size:8px;font-weight:850;letter-spacing:1px}
+      .appstore-kind-dot{width:5px;height:5px;border-radius:50%;background:#aaa;box-shadow:none}
+      .app-shell{background:#000}.topbar{position:absolute;top:0;left:0;right:0;z-index:20;height:62px;padding:0 20px;background:linear-gradient(180deg,rgba(0,0,0,.62),transparent);backdrop-filter:none;-webkit-backdrop-filter:none}
+      .brand{font-size:16px;font-weight:850;letter-spacing:1.3px;color:#fff}.brand-mark{display:none}
+      .icon-button{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.22);color:#fff;backdrop-filter:blur(12px)}
+      .hero.hero-cinema{height: min(88svh,790px);min-height:650px;max-height:820px;margin:0;position:relative;overflow:hidden;border-radius:0;background:#090909;isolation:isolate}
+      .hero-cinema .hero-image{position:absolute;inset:0;z-index:-2;background-size:cover;background-position:center 22%;transform:scale(1.015);animation:heroReveal .65s ease both}
+      .hero-cinema:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.32) 0%,transparent 28%,rgba(0,0,0,.16) 48%,rgba(0,0,0,.92) 78%,#000 100%)}
+      .hero-topline{position:absolute;top:76px;left:20px;right:20px;display:flex;align-items:center;justify-content:space-between;color:#eee;font-size:9px;font-weight:800;letter-spacing:1.8px}
+      .hero-count{font-size:10px;letter-spacing:1px;color:#aaa}.hero-count i{font-style:normal;color:#666;margin:0 4px}
+      .hero-cinema .hero-content{position:absolute;left:20px;right:20px;bottom:calc(24px + env(safe-area-inset-bottom));max-width:600px}
+      .hero-cinema .eyebrow{color:#bbb;font-size:9px;letter-spacing:2px;font-weight:750}
+      .hero-cinema h1{max-width:560px;margin:10px 0 11px;font-size:clamp(32px,9vw,48px);line-height:.99;letter-spacing:-1.5px;font-weight:850;color:#fff;text-shadow:none}
+      .hero-cinema .hero-meta{display:flex;align-items:center;gap:9px;color:#d0d0d0;font-size:11px}
+      .hero-cinema .meta-dot{width:3px;height:3px;background:#888;border-radius:50%}
+      .hero-cinema .hero-desc{max-width:360px;margin:10px 0 16px;color:#bcbcbc;font-size:11px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+      .hero-cinema .hero-actions{display:flex}.hero-cinema .primary-btn{height:43px;min-width:132px;padding:0 20px;border-radius:999px;background:#f3f3f3;color:#111;box-shadow:none;font-size:12px;font-weight:800}
+      .hero-thumbnails{display:flex;gap:8px;align-items:center;margin-top:20px;max-width:100%;overflow-x:auto;scrollbar-width:none;padding:2px 1px 4px}
+      .hero-thumbnails::-webkit-scrollbar{display:none}
+      .hero-thumb{position:relative;flex:1 0 0;min-width:0;max-width:68px;height:42px;padding:0;overflow:hidden;border:1px solid rgba(255,255,255,.2);border-radius:5px;background:#222;opacity:.52;transition:opacity .2s,border-color .2s,transform .2s}
+      .hero-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+      .hero-thumb.active{opacity:1;border:2px solid #fff;transform:translateY(-2px)}
+      .hero-thumb.active:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.12),transparent)}
+      .section{margin-top:27px}.section-head{padding:0 18px;margin-bottom:12px}.section-title{color:#f5f5f5;font-size:16px;font-weight:750;letter-spacing:-.2px}.section-link{color:#999}
+      .chips{display:flex;gap:8px;overflow-x:auto;padding:0 18px 5px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+      .chip{flex:none;background:#171717;color:#bbb;border:1px solid #303030;border-radius:999px;padding:9px 14px;font-size:11px}.chip.active{background:#eee;color:#111;border-color:#eee}
+      .dock-wrap{padding-left:16px;padding-right:16px}.dock{background:rgba(26,26,26,.9);border:1px solid rgba(255,255,255,.13);box-shadow:0 8px 28px rgba(0,0,0,.55);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-radius:22px}
+      .dock-item{color:#aaa}.dock-item.active{color:#fff;background:rgba(255,255,255,.12);box-shadow:none}
+      .search-input{background:#171717;border-color:#303030;color:#fff}.search-input:focus{border-color:#888}.search-hint,.detail-info{color:#aaa}
+      @keyframes heroReveal{from{opacity:.7;transform:scale(1.035)}to{opacity:1;transform:scale(1.015)}}
+      @media(min-width:700px){.app-shell{max-width:980px;margin:auto}.topbar{padding:0 28px}.hero.hero-cinema{height:760px;min-height:760px;border-radius:0 0 16px 16px;margin:0 16px}.hero-cinema .hero-content{left:34px;bottom:38px}.hero-topline{left:34px;right:34px}.hero-thumb{height:48px;max-width:82px}.movie-row,.fresh-row,.series-row{grid-auto-columns:290px;padding-left:25px;padding-right:25px}.section-head{padding:0 25px}.poster-row,.landscape-row{padding-left:25px;padding-right:25px}.ranked-list{padding-left:25px;padding-right:25px}}
+      @media(max-width:380px){.hero.hero-cinema{min-height:610px}.hero-cinema .hero-content{bottom:calc(18px + env(safe-area-inset-bottom))}.hero-thumb{height:36px}}
     `}</style>
 
     <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock">{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?active==="home"&&category===item.id:active==="search";return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory(item.id==="home"?"phim-moi-cap-nhat":item.id);window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
