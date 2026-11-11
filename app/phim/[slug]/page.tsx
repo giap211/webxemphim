@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Clapperboard, Play, ShieldCheck, Volume2 } from "lucide-react";
+import { ArrowLeft, Bookmark, Clapperboard, Play, Search, ShieldCheck, UserRound, Volume2 } from "lucide-react";
 
 type Episode = { name: string; slug: string; embed: string; m3u8: string };
 type Server = { name: string; episodes: Episode[] };
@@ -37,6 +37,6 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
       <h2 className="server-title" id="episode-picker">Danh sách tập</h2>
       {episodes.length ? <div className="episode-list">{episodes.map((episode,index)=><button key={episode.slug+index} className={`episode-btn ${selectedEpisode===episode?"active":""}`} onClick={()=>setSelectedEpisode(episode)}>{episode.name || `Tập ${index+1}`}</button>)}</div> : <p className="detail-info">Nguồn này chưa có danh sách tập khả dụng.</p>}
     </article>
-    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><a className="dock-item active" href="/"><Clapperboard size={19}/><span>Khám phá</span></a><a className="dock-item" href="/?tab=search"><span>⌕</span><span>Tìm kiếm</span></a><a className="dock-item" href="/?tab=saved"><span>♡</span><span>Đã lưu</span></a><a className="dock-item" href="/?tab=account"><span>◎</span><span>Tài khoản</span></a></div></nav>
+    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><a className="dock-item active" href="/"><Clapperboard size={19}/><span>Khám phá</span></a><a className="dock-item" href="/?tab=search"><Search size={25}/><span>Tìm kiếm</span></a><a className="dock-item" href="/?tab=saved"><Bookmark size={25}/><span>Đã lưu</span></a><a className="dock-item" href="/?tab=account"><UserRound size={25}/><span>Tài khoản</span></a></div></nav>
   </main>;
 }
