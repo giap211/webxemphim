@@ -56,7 +56,7 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
       .episode-selected-mark{font-size:7px;letter-spacing:.7px;color:#c8b0ff}
       .episode-picker-footer{padding:13px 20px 5px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px;color:#a99fba;font-size:10px}
       @media(min-width:600px){.episode-picker-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.episode-picker-overlay{padding-top:24px;padding-bottom:24px}}
-    `} />
+    `}</style>
     <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><a className="dock-item active" href="/"><Clapperboard size={22}/><span>Khám phá</span></a><a className="dock-item" href="/danh-sach?type=phim-le"><Clapperboard size={22}/><span>Phim lẻ</span></a><a className="dock-item" href="/danh-sach?type=phim-bo"><Film size={22}/><span>Phim bộ</span></a><a className="dock-item" href="/?tab=search"><Search size={22}/><span>Tìm kiếm</span></a></div></nav>
   </main>;
 }
