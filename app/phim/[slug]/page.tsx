@@ -56,6 +56,20 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
       .episode-selected-mark{font-size:7px;letter-spacing:.7px;color:#c8b0ff}
       .episode-picker-footer{padding:13px 20px 5px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px;color:#a99fba;font-size:10px}
       @media(min-width:600px){.episode-picker-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.episode-picker-overlay{padding-top:24px;padding-bottom:24px}}
+
+      .episode-open-button{background:#f1f1f1!important;color:#111!important;box-shadow:none!important;border-radius:999px!important}
+      .episode-count{background:rgba(0,0,0,.09);color:#333}
+      .episode-picker-overlay{background:rgba(0,0,0,.98);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+      .episode-picker-header h2{color:#f5f5f5}
+      .episode-picker-header p{color:#999}
+      .episode-picker-close{border-color:#333;background:#1b1b1b;color:#eee;border-radius:50%}
+      .episode-server-tabs button{border-color:#303030;background:#1a1a1a;color:#bbb}
+      .episode-server-tabs button.active{background:#eee;color:#111;border-color:#eee}
+      .episode-picker-item{border-color:#2b2b2b;background:#191919;color:#eee;border-radius:11px}
+      .episode-picker-item.active{border-color:#aaa;background:#303030;color:#fff}
+      .episode-selected-mark{color:#ddd}
+      .episode-picker-footer{border-color:#292929;color:#999}
+
     `}</style>
     <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><a className="dock-item active" href="/"><Clapperboard size={22}/><span>Khám phá</span></a><a className="dock-item" href="/danh-sach?type=phim-le"><Clapperboard size={22}/><span>Phim lẻ</span></a><a className="dock-item" href="/danh-sach?type=phim-bo"><Film size={22}/><span>Phim bộ</span></a><a className="dock-item" href="/?tab=search"><Search size={22}/><span>Tìm kiếm</span></a></div></nav>
   </main>;

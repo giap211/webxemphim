@@ -21,3 +21,69 @@ button,a,input{font:inherit}button{color:inherit}a{color:inherit;text-decoration
 /* Dock sizing refinement: clearer icons and larger touch targets on detail and home */
 .dock{min-height:76px;padding:8px 10px}.dock-item{height:60px;gap:5px;font-size:10px}.dock-item svg{width:25px;height:25px;flex:none}.dock-item.active svg{filter:drop-shadow(0 0 8px #a77aff)}.shelf-loading{display:grid;grid-auto-columns:112px;grid-auto-flow:column;gap:12px;overflow:hidden;padding:0 18px 8px}.shelf-loading .loading-card{width:112px}
 @media(min-width:700px){.dock{min-height:78px}.dock-item{height:62px}.dock-item svg{width:26px;height:26px}}
+
+
+/* Minimal monochrome movie-app direction */
+:root{color-scheme:dark;--bg:#000;--surface:#171717;--surface-2:#222;--text:#f5f5f5;--muted:#969696;--purple:#f2f2f2;--purple-2:#d8d8d8;--line:rgba(255,255,255,.1)}
+html,body{background:#000!important;color:#f5f5f5}
+body{background:#000!important}
+.app-shell{background:#000}
+.topbar{background:rgba(0,0,0,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.brand-mark{background:transparent!important;box-shadow:none!important;color:#fff!important}
+.brand>span:last-child span{color:#fff!important}
+.icon-button{background:#171717;border-color:#303030;color:#eee}
+.hero{margin:0;min-height:470px;height:min(67vh,610px);border-radius:0 0 20px 20px;background:#171717}
+.hero:before{background:linear-gradient(0deg,#000 0%,rgba(0,0,0,.88) 18%,rgba(0,0,0,.2) 65%,rgba(0,0,0,.08) 100%),linear-gradient(90deg,rgba(0,0,0,.28),transparent 85%)}
+.eyebrow{color:#d0d0d0}
+.hero-meta,.hero-desc{color:#c4c4c4}
+.meta-dot{background:#777}
+.primary-btn{background:#f1f1f1!important;color:#111!important;box-shadow:none!important;border-radius:999px!important}
+.secondary-btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.14)}
+.section{margin-top:25px}
+.section-title{color:#f5f5f5}
+.section-link{color:#aaa}
+.section-title svg{color:#eee!important}
+.chip{background:#171717;color:#bdbdbd;border-color:#303030}
+.chip.active{background:#f1f1f1;color:#111;border-color:#f1f1f1}
+.poster-art{background:#202020;box-shadow:none}
+.poster-art>button{background:#f1f1f1;color:#111;border-color:#fff}
+.poster-card strong,.landscape-copy strong{color:#f4f4f4}
+.poster-card small,.landscape-copy small{color:#929292}
+.landscape-card{background:#171717;border-color:#292929;border-radius:14px}
+.landscape-art{background:#222}
+.ranked-card{background:#171717;border-color:#292929;border-radius:13px}
+.rank-number,.rank-copy span,.rank-play{color:#eee}
+.rank-poster{background:#222}
+.appstore-movie{background:#181818;border-color:#292929;box-shadow:none;border-radius:16px}
+.appstore-movie:active{border-color:#777}
+.appstore-artwork{background:#222;box-shadow:none;border-radius:11px}
+.appstore-quality{background:rgba(0,0,0,.72);color:#fff}
+.artwork-fallback{color:#ddd}
+.appstore-name{color:#f4f4f4}
+.appstore-open{background:#eaeaea;color:#111;box-shadow:none}
+.appstore-original{color:#999}
+.appstore-meta{color:#c0c0c0}
+.appstore-kind{color:#929292}
+.appstore-kind-dot{background:#aaa;box-shadow:none}
+.appstore-skeleton{background:#171717;border-color:#292929}
+.appstore-skeleton-art,.appstore-skeleton-copy i{background:linear-gradient(100deg,#202020 25%,#303030 45%,#202020 65%);background-size:220% 100%}
+.dock-wrap{padding-left:16px;padding-right:16px}
+.dock{background:rgba(31,31,31,.88);border:1px solid rgba(255,255,255,.13);box-shadow:0 8px 28px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);backdrop-filter:blur(24px) saturate(1.1);-webkit-backdrop-filter:blur(24px) saturate(1.1);border-radius:24px}
+.dock-item{color:#a8a8a8}
+.dock-item.active{color:#fff;background:rgba(255,255,255,.11);box-shadow:none}
+.dock-item.active svg{filter:none}
+.search-input{background:#171717;border-color:#303030;color:#fff}
+.search-input:focus{border-color:#888}
+.search-hint,.detail-info{color:#aaa}
+.detail-back{color:#ddd}
+.detail-cover{background-color:#171717;border-radius:18px}
+.detail-cover:after{background:linear-gradient(0deg,#000,transparent 90%)}
+.detail-play .primary-btn{background:#f1f1f1;color:#111}
+.watch-section{background:#151515;border-color:#292929;box-shadow:none;border-radius:16px}
+.watch-kicker{color:#bbb}
+.watch-live{background:#242424;color:#ddd}
+.change-episode{background:#222;color:#eee}
+.detail-error{color:#aaa}
+.search-panel{background:#000}
+@media(min-width:700px){.hero{margin:8px 18px 0;border-radius:18px}.topbar{background:rgba(0,0,0,.86)}}
+
