@@ -19,6 +19,7 @@ export default function HomePage() {
   const [category, setCategory] = useState("phim-moi-cap-nhat");
   const [movies, setMovies] = useState<Movie[]>([]);
   const [fresh, setFresh] = useState<Movie[]>([]);
+  const [shelves, setShelves] = useState<Record<string, Movie[]>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
@@ -31,6 +32,7 @@ export default function HomePage() {
   }, []);
   useEffect(() => { void load(category); }, [category, load]);
   useEffect(() => { let alive = true; fetch("/api/movies?type=phim-moi-cap-nhat").then(r => r.json()).then((d: Feed) => { if (alive) setFresh(d.items || []); }).catch(() => {}); return () => { alive = false; }; }, []);
+  useEffect(() => { let alive = true; const types = ["phim-le", "phim-bo", "hoat-hinh", "tv-shows"]; Promise.all(types.map(async type => { try { const r = await fetch(`/api/movies?type=${type}`); const d = await r.json() as Feed; return [type, d.items || []] as const; } catch { return [type, []] as const; } })).then(rows => { if (alive) setShelves(Object.fromEntries(rows)); }); return () => { alive = false; }; }, []);
   useEffect(() => { if (!search.trim()) { setSearchResults([]); return; } const timer = window.setTimeout(() => { fetch(`/api/movies?q=${encodeURIComponent(search.trim())}`).then(r => r.json()).then((d: Feed) => setSearchResults(d.items || [])).catch(() => setSearchResults([])); }, 350); return () => window.clearTimeout(timer); }, [search]);
 
   const hero = useMemo(() => fresh[0], [fresh]);
@@ -44,6 +46,7 @@ export default function HomePage() {
       <section className="section"><div className="section-head"><h2 className="section-title">Khám phá phim</h2><span className="section-link">Vuốt để xem thêm</span></div><div className="chips">{categories.map(c=><button key={c.type} className={`chip ${category===c.type?"active":""}`} onClick={()=>setCategory(c.type)}>{c.label}</button>)}</div></section>
       <section className="section"><div className="section-head"><h2 className="section-title"><Flame size={16} style={{display:"inline",verticalAlign:"-3px",color:"#b99bff"}}/> {categories.find(c=>c.type===category)?.label || "Phim mới"}</h2><a className="section-link" href="/danh-sach">Xem tất cả</a></div><div className="movie-row">{loading ? Array.from({length:7},(_,i)=><div className="movie-card" key={i}><div className="loading-card"/></div>) : movies.slice(0,18).map(movie=><MovieCard key={movie.id} movie={movie}/>)}</div>{!loading && movies.length===0 && <p className="empty-state">Chưa tải được danh sách phim. Hãy thử lại sau.</p>}</section>
       {featured.length>0 && <section className="section"><div className="section-head"><h2 className="section-title">Vừa cập nhật</h2><span className="section-link">Mới nhất</span></div><div className="movie-row">{featured.map(movie=><MovieCard key={movie.id} movie={movie}/>)}</div></section>}
+      {categories.filter(c => c.type !== "phim-moi-cap-nhat").map(c => <section className="section" key={c.type}><div className="section-head"><h2 className="section-title">{c.label} nổi bật</h2><a className="section-link" href={`/danh-sach?type=${c.type}`}>Xem tất cả</a></div><div className="movie-row">{(shelves[c.type] || []).slice(0,14).map(movie=><MovieCard key={movie.id} movie={movie}/>)}</div>{!shelves[c.type] && <div className="shelf-loading">{Array.from({length:6},(_,i)=><div className="loading-card" key={i}/>)}</div>}</section>)}
     </>}
     <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock">{nav.map(item=>{const Icon=item.icon;return <button key={item.id} className={`dock-item ${active===item.id?"active":""}`} onClick={()=>{setActive(item.id);if(item.id==="home"){setShowSearch(false);setSearch("");}if(item.id==="search")setShowSearch(true);}}><Icon size={19} strokeWidth={active===item.id?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
   </main>;
