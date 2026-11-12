@@ -37,7 +37,7 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [showSearch, setShowSearch] = useState(false);
-  const [heroIndex, setHeroIndex] = useState(0);
+  const [savedHeroId, setSavedHeroId] = useState<string | null>(null);
 
   const load = useCallback(async (type: string) => {
     setLoading(true);
@@ -50,24 +50,24 @@ export default function HomePage() {
   useEffect(() => { let alive = true; const types = ["phim-le", "phim-bo", "hoat-hinh", "tv-shows"]; Promise.all(types.map(async type => { try { const r = await fetch(`/api/movies?type=${type}`); const d = await r.json() as Feed; return [type, d.items || []] as const; } catch { return [type, []] as const; } })).then(rows => { if (alive) setShelves(Object.fromEntries(rows)); }); return () => { alive = false; }; }, []);
   useEffect(() => { if (!search.trim()) { setSearchResults([]); return; } const timer = window.setTimeout(() => { fetch(`/api/movies?q=${encodeURIComponent(search.trim())}`).then(r => r.json()).then((d: Feed) => setSearchResults(d.items || [])).catch(() => setSearchResults([])); }, 350); return () => window.clearTimeout(timer); }, [search]);
 
-  const heroMovies = useMemo(() => fresh.slice(0, 6), [fresh]);
-  const hero = heroMovies[heroIndex] || heroMovies[0];
+  const hero = fresh[0];
   const featured = fresh.slice(6, 18);
   const nav = [{id:"home",label:"Khám phá",icon:Home},{id:"phim-le",label:"Phim lẻ",icon:Clapperboard},{id:"phim-bo",label:"Phim bộ",icon:Film},{id:"search",label:"Tìm kiếm",icon:Search}];
 
   return <main className="app-shell">
     <header className={`topbar ${showSearch || active === "search" ? "searching" : ""}`}><a className="brand" href="/"><span>XEMPHIM</span></a><div className="top-actions"><button className="icon-button" aria-label="Thông báo"><Bell size={18}/></button></div></header>
     {showSearch || active === "search" ? <section className="search-panel"><input className="search-input" autoFocus placeholder="Tìm tên phim, diễn viên..." value={search} onChange={e=>setSearch(e.target.value)} /><p className="search-hint">{search.trim() ? `Kết quả cho “${search}”` : "Tìm bộ phim bạn muốn xem"}</p><div className="movie-row">{searchResults.map(movie=><MovieCard key={movie.id} movie={movie}/>)}</div></section> : <>
-      {hero && <section className="hero hero-cinema" aria-label="Phim nổi bật">
-        <div className="hero-image" key={hero.id} style={{backgroundImage:`url("${hero.backdrop || hero.poster}")`}}/>
-        <div className="hero-topline"><span className="hero-kicker">PHIM ĐANG ĐƯỢC QUAN TÂM</span><span className="hero-count">{String(heroIndex+1).padStart(2,"0")} <i>/</i> {String(heroMovies.length).padStart(2,"0")}</span></div>
+      {hero && <section className="hero" aria-label="Phim nổi bật">
+        <div className="hero-image" style={{backgroundImage:`url("${hero.backdrop || hero.poster}")`}}/>
         <div className="hero-content">
-          <span className="eyebrow"><i className="hero-live-dot"/> NỔI BẬT HÔM NAY</span>
+          <span className="eyebrow">ĐỀ XUẤT HÔM NAY</span>
           <h1>{hero.name}</h1>
           <div className="hero-meta"><span>{hero.year || "Mới"}</span><i className="meta-dot"/><span>{hero.quality || "HD"}</span><i className="meta-dot"/><span>{hero.language || "Vietsub"}</span></div>
           <p className="hero-desc">{hero.originName || "Khám phá bộ phim nổi bật hôm nay."}</p>
-          <div className="hero-actions"><a className="primary-btn" href={`/phim/${hero.slug}`}><Play size={16} fill="currentColor"/> Xem ngay</a><a className="hero-detail-btn" href={`/phim/${hero.slug}`}>Thông tin phim <span>›</span></a></div>
-          <div className="hero-thumbnails" aria-label="Chọn phim nổi bật">{heroMovies.map((movie,index)=><button key={movie.id} className={`hero-thumb ${index===heroIndex?"active":""}`} onClick={()=>setHeroIndex(index)} aria-label={`Xem giới thiệu ${movie.name}`} aria-pressed={index===heroIndex}><img src={movie.backdrop || movie.poster} alt="" loading="lazy"/><span/></button>)}</div>
+          <div className="hero-actions">
+            <a className="primary-btn" href={`/phim/${hero.slug}`}><Play size={16} fill="currentColor"/> Xem ngay</a>
+            <button className="secondary-btn" onClick={()=>setSavedHeroId(hero.id)}><Clapperboard size={15}/>{savedHeroId===hero.id?"Đã lưu":"Lưu phim"}</button>
+          </div>
         </div>
       </section>}
       <section className="section"><div className="section-head"><h2 className="section-title">Khám phá phim</h2><span className="section-link">Vuốt để xem thêm</span></div><div className="chips">{categories.map(c=><button key={c.type} className={`chip ${category===c.type?"active":""}`} onClick={()=>setCategory(c.type)}>{c.label}</button>)}</div></section>
