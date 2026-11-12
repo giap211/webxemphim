@@ -39,6 +39,27 @@ export default function HomePage() {
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [savedHeroId, setSavedHeroId] = useState<string | null>(null);
+  const [dockHidden, setDockHidden] = useState(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = Math.max(0, window.scrollY);
+        const delta = y - lastY;
+        if (y < 48) setDockHidden(false);
+        else if (delta > 7) setDockHidden(true);
+        else if (delta < -7) setDockHidden(false);
+        lastY = y;
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const load = useCallback(async (type: string) => {
     setLoading(true);
@@ -158,7 +179,7 @@ export default function HomePage() {
       .section{margin-top:27px}.section-head{padding:0 18px;margin-bottom:12px}.section-title{color:#f5f5f5;font-size:16px;font-weight:750;letter-spacing:-.2px}.section-link{color:#999}
       .chips{display:flex;gap:8px;overflow-x:auto;padding:0 18px 5px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
       .chip{flex:none;background:#171717;color:#bbb;border:1px solid #303030;border-radius:999px;padding:9px 14px;font-size:11px}.chip.active{background:#eee;color:#111;border-color:#eee}
-      .dock-wrap{padding-left:16px;padding-right:16px}.dock{background:rgba(26,26,26,.9);border:1px solid rgba(255,255,255,.13);box-shadow:0 8px 28px rgba(0,0,0,.55);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-radius:22px}
+      .dock-wrap{padding-left:16px;padding-right:16px;transition:transform .42s cubic-bezier(.22,.8,.25,1),opacity .3s ease;will-change:transform,opacity}.dock-wrap.dock-hidden{transform:translate3d(0,calc(100% + 28px),0);opacity:0;pointer-events:none}.dock{background:rgba(26,26,26,.9);border:1px solid rgba(255,255,255,.13);box-shadow:0 8px 28px rgba(0,0,0,.55);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-radius:22px}
       .dock-item{color:#aaa}.dock-item.active{color:#fff;background:rgba(255,255,255,.12);box-shadow:none}
       .search-input{background:#171717;border-color:#303030;color:#fff}.search-input:focus{border-color:#888}.search-hint,.detail-info{color:#aaa}
       @keyframes heroReveal{from{opacity:.7;transform:scale(1.035)}to{opacity:1;transform:scale(1.015)}}
@@ -206,10 +227,10 @@ export default function HomePage() {
       .dock.liquid-fallback{background:rgba(255,255,255,.08);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%)}
       @keyframes dockPageEnter{from{opacity:0;transform:translate3d(0,10px,0);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
       .app-shell > :not(.dock-wrap){animation:dockPageEnter .32s cubic-bezier(.2,.75,.25,1) both}
-      @media(prefers-reduced-motion:reduce){.app-shell{animation:none}.dock-item,.gt-liquid-glass-bubble{transition:none}}
+      @media(prefers-reduced-motion:reduce){.app-shell{animation:none}.dock-wrap,.dock-item,.gt-liquid-glass-bubble{transition:none}}
       @media(min-width:700px){.dock-wrap{padding-bottom:14px}}
     `}</style>
 
-    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?false:active==="search";if(item.id==="phim-le"||item.id==="phim-bo")return <Link key={item.id} href={`/danh-sach/${item.id}`} prefetch className="dock-item"><Icon size={22}/><span>{item.label}</span></Link>;return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory("phim-moi-cap-nhat");window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
+    <nav className={`dock-wrap ${dockHidden ? "dock-hidden" : ""}`} aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?false:active==="search";if(item.id==="phim-le"||item.id==="phim-bo")return <Link key={item.id} href={`/danh-sach/${item.id}`} prefetch className="dock-item"><Icon size={22}/><span>{item.label}</span></Link>;return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory("phim-moi-cap-nhat");window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
   </main>;
 }

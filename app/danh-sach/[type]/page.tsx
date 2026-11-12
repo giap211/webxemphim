@@ -16,6 +16,27 @@ export default function CategoryPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [dockHidden, setDockHidden] = useState(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = Math.max(0, window.scrollY);
+        const delta = y - lastY;
+        if (y < 48) setDockHidden(false);
+        else if (delta > 7) setDockHidden(true);
+        else if (delta < -7) setDockHidden(false);
+        lastY = y;
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -53,7 +74,7 @@ export default function CategoryPage() {
         <strong>{movie.name}</strong><small>{movie.originName || movie.year || "Đang cập nhật"}</small><em>{movie.year || "Mới"} · {movie.currentEpisode || "Đang cập nhật"}</em>
       </a>)}</div> : <p className="catalog-empty">Chưa có phim trong danh sách này.</p>}
     </section>
-    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;return <Link key={item.id} href={item.href} prefetch className={`dock-item ${item.id===type?"active":""}`}><Icon size={22}/><span>{item.label}</span></Link>;})}</div></nav>
+    <nav className={`dock-wrap ${dockHidden ? "dock-hidden" : ""}`} aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;return <Link key={item.id} href={item.href} prefetch className={`dock-item ${item.id===type?"active":""}`}><Icon size={22}/><span>{item.label}</span></Link>;})}</div></nav>
     <style jsx global>{`
       .catalog-page{min-height:100svh;background:#000;padding-bottom:calc(112px + env(safe-area-inset-bottom))}
       .catalog-header{height:76px;padding:env(safe-area-inset-top) 19px 0;display:flex;align-items:center;gap:13px;position:sticky;top:0;z-index:25;background:rgba(0,0,0,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
@@ -78,7 +99,7 @@ export default function CategoryPage() {
       @keyframes dockPageEnter{from{opacity:0;transform:translate3d(0,10px,0);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
       .catalog-header,.catalog-content{animation:dockPageEnter .32s cubic-bezier(.2,.75,.25,1) both}
       /* Keep the same fixed Liquid Glass dock on category routes */
-      .catalog-page .dock-wrap{position:fixed;z-index:60;left:0;right:0;bottom:0;padding:0 16px calc(10px + env(safe-area-inset-bottom));pointer-events:none}
+      .catalog-page .dock-wrap{position:fixed;z-index:60;left:0;right:0;bottom:0;padding:0 16px calc(10px + env(safe-area-inset-bottom));pointer-events:none;transition:transform .42s cubic-bezier(.22,.8,.25,1),opacity .3s ease;will-change:transform,opacity}.catalog-page .dock-wrap.dock-hidden{transform:translate3d(0,calc(100% + 28px),0);opacity:0;pointer-events:none}
       .catalog-page .dock-wrap>.dock{position:relative;isolation:isolate;pointer-events:auto;width:min(92vw,380px);max-width:380px;min-height:72px;height:72px;margin:0 auto;padding:7px 9px;display:flex;align-items:center;justify-content:space-between;gap:4px;overflow:hidden;border-radius:9999px;background:transparent;border:1px solid rgba(255,255,255,.2);box-shadow:0 18px 48px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.04);backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-tap-highlight-color:transparent}
       .catalog-page .gt-liquid-glass-blur{position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;background:rgba(255,255,255,.045);backdrop-filter:blur(16px) saturate(145%);-webkit-backdrop-filter:blur(16px) saturate(145%)}
       .catalog-page .gt-liquid-glass-bubble{position:absolute;top:7px;bottom:7px;left:0;width:0;z-index:2;pointer-events:none;border-radius:9999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 3px 16px rgba(0,0,0,.08);transition:left .48s cubic-bezier(.34,1.2,.64,1),width .48s cubic-bezier(.34,1.2,.64,1)}
@@ -88,7 +109,7 @@ export default function CategoryPage() {
       .catalog-page .dock-item:active{transform:scale(1.09)}
       .catalog-page .dock.liquid-fallback{background:rgba(255,255,255,.08);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%)}
       @media(min-width:700px){.catalog-page .dock-wrap{padding-bottom:14px}}
-      @media(prefers-reduced-motion:reduce){.catalog-header,.catalog-content{animation:none}.catalog-page .dock-item,.catalog-page .gt-liquid-glass-bubble{transition:none}}
+      @media(prefers-reduced-motion:reduce){.catalog-header,.catalog-content{animation:none}.catalog-page .dock-wrap,.catalog-page .dock-item,.catalog-page .gt-liquid-glass-bubble{transition:none}}
     `}</style>
   </main>;
 }
