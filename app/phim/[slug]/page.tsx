@@ -38,7 +38,7 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
     </article>
     <style jsx global>{`
       .episode-open-button{width:100%;max-width:360px;min-height:48px;justify-content:center;cursor:pointer}
-      .detail-watch-dock-button{width:100%;flex:1;height:58px;flex-direction:row;align-items:center;justify-content:center;gap:0;font-size:13px;font-weight:800;letter-spacing:.08em;color:#fff!important;background:transparent!important;box-shadow:none!important;transform:none!important}
+      .detail-watch-dock-button{display:flex;width:100%;flex:1;height:58px;margin-inline:auto;flex-direction:row;align-items:center;justify-content:center;text-align:center;gap:0;font-size:13px;font-weight:800;letter-spacing:.08em;color:#fff!important;background:transparent!important;box-shadow:none!important;transform:none!important}
       .detail-watch-dock-button:active{transform:none!important;background:transparent!important;box-shadow:none!important}
       .dock-wrap>.dock{width:min(92vw,380px);height:72px;min-height:72px;border-radius:9999px}
       .episode-open-button:disabled{opacity:.45;cursor:not-allowed}
@@ -74,6 +74,6 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
       .episode-picker-footer{border-color:#292929;color:#999}
 
     `}</style>
-    <nav className="dock-wrap" aria-label="Xem phim"><div className="dock"><button type="button" className="dock-item detail-watch-dock-button" onClick={()=>{if(selectedEpisode){playerRef.current?.scrollIntoView({behavior:"smooth",block:"center"});}else{setEpisodePickerOpen(true);}}}>XEM PHIM</button></div></nav>
+    <nav className="dock-wrap" aria-label="Xem phim"><div className="dock"><button type="button" className="dock-item detail-watch-dock-button" disabled={!servers.some(server=>server.episodes.length>0)} onClick={()=>{const firstServerIndex=servers.findIndex(server=>server.episodes.length>0);const firstEpisode=firstServerIndex>=0?servers[firstServerIndex].episodes[0]:null;if(firstEpisode){setSelectedServer(firstServerIndex);setSelectedEpisode(firstEpisode);setEpisodePickerOpen(false);}}}>XEM PHIM</button></div></nav>
   </main>;
 }
