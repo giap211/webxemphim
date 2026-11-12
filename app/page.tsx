@@ -78,7 +78,12 @@ export default function HomePage() {
 
     <style jsx global>{`
 
-      .search-panel{position:relative;z-index:1;min-height:100svh;padding:calc(82px + env(safe-area-inset-top)) 18px calc(110px + env(safe-area-inset-bottom));box-sizing:border-box}\n      .search-panel .search-input{display:block;width:100%;max-width:680px;margin:0 auto 14px}\n      .search-panel .search-hint{max-width:680px;margin:0 auto 14px}\n      .search-panel .movie-row{max-width:720px;margin:0 auto}\n      @media(max-width:600px){.topbar.searching{height:58px}.search-panel{padding-top:calc(76px + env(safe-area-inset-top))}}\n      .poster-row,.landscape-row{display:grid;grid-auto-flow:column;grid-auto-columns:132px;gap:13px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:0 18px 12px;scrollbar-width:none}
+      .search-panel{position:relative;z-index:1;min-height:100svh;padding:calc(82px + env(safe-area-inset-top)) 18px calc(110px + env(safe-area-inset-bottom));box-sizing:border-box}
+      .search-panel .search-input{display:block;width:100%;max-width:680px;margin:0 auto 14px}
+      .search-panel .search-hint{max-width:680px;margin:0 auto 14px}
+      .search-panel .movie-row{max-width:720px;margin:0 auto}
+      @media(max-width:600px){.topbar.searching{height:58px}.search-panel{padding-top:calc(76px + env(safe-area-inset-top))}}
+      .poster-row,.landscape-row{display:grid;grid-auto-flow:column;grid-auto-columns:132px;gap:13px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:0 18px 12px;scrollbar-width:none}
       .poster-row::-webkit-scrollbar,.landscape-row::-webkit-scrollbar{display:none}
       .poster-card{min-width:0;display:flex;flex-direction:column;gap:7px;scroll-snap-align:start;text-decoration:none}
       .poster-art{height:190px;position:relative;overflow:hidden;border-radius:12px;background:#202020}
