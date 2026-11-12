@@ -13,10 +13,10 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="vi"><body>
-      <svg aria-hidden="true" width="0" height="0" style={{position:"absolute",width:0,height:0,overflow:"hidden"}}>
-        <filter id="liquid-text-refraction" x="-8%" y="-12%" width="116%" height="124%" colorInterpolationFilters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.025 0.04" numOctaves="2" seed="11" result="glassNoise" />
-          <feDisplacementMap in="SourceGraphic" in2="glassNoise" scale="2.4" xChannelSelector="R" yChannelSelector="G" />
+      <svg aria-hidden="true" width="1" height="1" viewBox="0 0 1 1" style={{position:"fixed",left:"-2px",top:"-2px",width:"1px",height:"1px",overflow:"visible",pointerEvents:"none"}}>
+        <filter id="liquid-text-refraction" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.018 0.032" numOctaves="2" seed="11" result="glassNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="glassNoise" scale="5.5" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
       {children}
