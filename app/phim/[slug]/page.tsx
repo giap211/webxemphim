@@ -26,7 +26,7 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
   const source = useMemo(()=>selectedEpisode?.embed || selectedEpisode?.m3u8 || "",[selectedEpisode]);
   if (loading) return <main className="detail-page"><p className="empty-state">Đang tải thông tin phim…</p></main>;
   if (!movie) return <main className="detail-page"><a className="detail-back" href="/"><ArrowLeft size={16}/> Trang chủ</a><div className="detail-error">{data?.error || "Không tìm thấy phim hoặc nguồn dữ liệu đang bận."}</div></main>;
-  return <main className="app-shell"><header className="topbar"><a className="brand" href="/"><span className="brand-mark"><Clapperboard size={17}/></span><span>PHIM<span style={{color:"#b99bff"}}> LẬU</span></span></a><span className="eyebrow"><ShieldCheck size={13}/> MOBILE PLAYER</span></header>
+  return <main className="app-shell"><header className="topbar"><a className="brand" href="/"><span className="brand-mark"><Clapperboard size={17}/></span><span>XEMPHIM</span></a><span className="eyebrow"><ShieldCheck size={13}/> MOBILE PLAYER</span></header>
     <article className="detail-page"><a className="detail-back" href="/"><ArrowLeft size={16}/> Quay lại khám phá</a>
       <div className="detail-cover" style={{backgroundImage:`url("${movie.backdrop || movie.poster}")`}}><h1>{movie.name}</h1></div>
       <div className="hero-meta" style={{marginTop:14}}><span>{movie.year || "—"}</span><i className="meta-dot"/><span>{movie.quality || "HD"}</span><i className="meta-dot"/><span>{movie.language || "Vietsub"}</span><i className="meta-dot"/><span>{movie.time || "Đang cập nhật"}</span></div>
