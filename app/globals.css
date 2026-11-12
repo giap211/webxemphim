@@ -86,17 +86,3 @@ body{background:#000!important}
 .detail-error{color:#aaa}
 .search-panel{background:#000}
 @media(min-width:700px){.hero{margin:8px 18px 0;border-radius:18px}.topbar{background:rgba(0,0,0,.86)}}
-
-
-
-/* Consistent liquid-glass refraction for text-bearing elements and app labels */
-body :is(h1,h2,h3,h4,h5,h6,p,span,a,button,label,strong,b,em,i,small,li,dt,dd,blockquote,figcaption,time,summary,output,legend,th,td,.brand,.section-title,.section-link,.eyebrow,.hero-meta,.hero-desc,.movie-name,.movie-sub,.detail-info,.detail-back,.watch-kicker,.watch-heading,.watch-live,.change-episode,.search-hint,.dock-item) {
-  -webkit-filter: url("#liquid-text-refraction");
-  filter: url("#liquid-text-refraction");
-}
-@media (prefers-reduced-motion: reduce) {
-  body :is(h1,h2,h3,h4,h5,h6,p,span,a,button,label,strong,b,em,i,small,li,dt,dd,blockquote,figcaption,time,summary,output,legend,th,td,.brand,.section-title,.section-link,.eyebrow,.hero-meta,.hero-desc,.movie-name,.movie-sub,.detail-info,.detail-back,.watch-kicker,.watch-heading,.watch-live,.change-episode,.search-hint,.dock-item) {
-    filter: none;
-    -webkit-filter: none;
-  }
-}
