@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft, Clapperboard, Film, Home, Play, Search } from "lucide-react";
 import { LiquidGlassDockSurface } from "@/components/liquid-glass-dock-surface";
 
@@ -52,7 +53,7 @@ export default function CategoryPage() {
         <strong>{movie.name}</strong><small>{movie.originName || movie.year || "Đang cập nhật"}</small><em>{movie.year || "Mới"} · {movie.currentEpisode || "Đang cập nhật"}</em>
       </a>)}</div> : <p className="catalog-empty">Chưa có phim trong danh sách này.</p>}
     </section>
-    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;return <a key={item.id} href={item.href} className={`dock-item ${item.id===type?"active":""}`}><Icon size={22}/><span>{item.label}</span></a>;})}</div></nav>
+    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;return <Link key={item.id} href={item.href} prefetch className={`dock-item ${item.id===type?"active":""}`}><Icon size={22}/><span>{item.label}</span></Link>;})}</div></nav>
     <style jsx global>{`
       .catalog-page{min-height:100svh;background:#000;padding-bottom:calc(112px + env(safe-area-inset-bottom))}
       .catalog-header{height:76px;padding:env(safe-area-inset-top) 19px 0;display:flex;align-items:center;gap:13px;position:sticky;top:0;z-index:25;background:rgba(0,0,0,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
@@ -74,6 +75,8 @@ export default function CategoryPage() {
       .catalog-skeleton{min-width:0}.catalog-skeleton i{display:block;width:100%;aspect-ratio:2/3;border-radius:11px;background:linear-gradient(100deg,#171717 25%,#303030 45%,#171717 65%);background-size:220% 100%;animation:shimmer 1.3s infinite}.catalog-skeleton b,.catalog-skeleton span{display:block;height:8px;margin-top:8px;border-radius:8px;background:#242424}.catalog-skeleton span{width:65%;height:6px;margin-top:6px}
       .catalog-empty{padding:35px 8px;text-align:center;color:#999;font-size:12px}
       @media(min-width:650px){.catalog-page{max-width:980px;margin:auto}.catalog-content{padding-left:25px;padding-right:25px}.catalog-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:24px 15px}.catalog-header{padding-left:25px;padding-right:25px}}
+      @keyframes dockPageEnter{from{opacity:0;transform:translate3d(0,10px,0);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
+      .catalog-page{animation:dockPageEnter .32s cubic-bezier(.2,.75,.25,1) both;will-change:opacity,transform}
       /* Keep the same fixed Liquid Glass dock on category routes */
       .catalog-page .dock-wrap{position:fixed;z-index:60;left:0;right:0;bottom:0;padding:0 16px calc(10px + env(safe-area-inset-bottom));pointer-events:none}
       .catalog-page .dock-wrap>.dock{position:relative;isolation:isolate;pointer-events:auto;width:min(92vw,380px);max-width:380px;min-height:72px;height:72px;margin:0 auto;padding:7px 9px;display:flex;align-items:center;justify-content:space-between;gap:4px;overflow:hidden;border-radius:9999px;background:transparent;border:1px solid rgba(255,255,255,.2);box-shadow:0 18px 48px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.04);backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-tap-highlight-color:transparent}
@@ -85,7 +88,7 @@ export default function CategoryPage() {
       .catalog-page .dock-item:active{transform:scale(1.09)}
       .catalog-page .dock.liquid-fallback{background:rgba(255,255,255,.08);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%)}
       @media(min-width:700px){.catalog-page .dock-wrap{padding-bottom:14px}}
-      @media(prefers-reduced-motion:reduce){.catalog-page .dock-item,.catalog-page .gt-liquid-glass-bubble{transition:none}}
+      @media(prefers-reduced-motion:reduce){.catalog-page{animation:none}.catalog-page .dock-item,.catalog-page .gt-liquid-glass-bubble{transition:none}}
     `}</style>
   </main>;
 }
