@@ -89,11 +89,14 @@ body{background:#000!important}
 
 
 
-/* Subtle liquid-glass refraction on text throughout the site */
-body :is(h2,h3,span,p) {
+/* Consistent liquid-glass refraction for text-bearing elements and app labels */
+body :is(h1,h2,h3,h4,h5,h6,p,span,a,button,label,strong,b,em,i,small,li,dt,dd,blockquote,figcaption,time,summary,output,legend,th,td,.brand,.section-title,.section-link,.eyebrow,.hero-meta,.hero-desc,.movie-name,.movie-sub,.detail-info,.detail-back,.watch-kicker,.watch-heading,.watch-live,.change-episode,.search-hint,.dock-item) {
   -webkit-filter: url("#liquid-text-refraction");
   filter: url("#liquid-text-refraction");
 }
 @media (prefers-reduced-motion: reduce) {
-  body :is(h2,h3,span,p) { filter: none; -webkit-filter: none; }
+  body :is(h1,h2,h3,h4,h5,h6,p,span,a,button,label,strong,b,em,i,small,li,dt,dd,blockquote,figcaption,time,summary,output,legend,th,td,.brand,.section-title,.section-link,.eyebrow,.hero-meta,.hero-desc,.movie-name,.movie-sub,.detail-info,.detail-back,.watch-kicker,.watch-heading,.watch-live,.change-episode,.search-hint,.dock-item) {
+    filter: none;
+    -webkit-filter: none;
+  }
 }
