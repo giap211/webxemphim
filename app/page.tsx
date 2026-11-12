@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, Clapperboard, Film, Flame, Home, Play, Search } from "lucide-react";
+import Link from "next/link";
 import { LiquidGlassDockSurface } from "@/components/liquid-glass-dock-surface";
 
 type Movie = { id: string; slug: string; name: string; originName: string; poster: string; backdrop: string; year: number | null; quality: string; language: string; currentEpisode: string; rating: number | null };
@@ -203,10 +204,12 @@ export default function HomePage() {
       .dock-item.active svg{filter:none}
       .dock-item:active{transform:scale(1.09)}
       .dock.liquid-fallback{background:rgba(255,255,255,.08);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%)}
-      @media(prefers-reduced-motion:reduce){.dock-item,.gt-liquid-glass-bubble{transition:none}}
+      @keyframes dockPageEnter{from{opacity:0;transform:translate3d(0,10px,0);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
+      .app-shell{animation:dockPageEnter .32s cubic-bezier(.2,.75,.25,1) both;will-change:opacity,transform}
+      @media(prefers-reduced-motion:reduce){.app-shell{animation:none}.dock-item,.gt-liquid-glass-bubble{transition:none}}
       @media(min-width:700px){.dock-wrap{padding-bottom:14px}}
     `}</style>
 
-    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?false:active==="search";if(item.id==="phim-le"||item.id==="phim-bo")return <a key={item.id} href={`/danh-sach/${item.id}`} className="dock-item"><Icon size={22}/><span>{item.label}</span></a>;return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory("phim-moi-cap-nhat");window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
+    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?false:active==="search";if(item.id==="phim-le"||item.id==="phim-bo")return <Link key={item.id} href={`/danh-sach/${item.id}`} prefetch className="dock-item"><Icon size={22}/><span>{item.label}</span></Link>;return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory("phim-moi-cap-nhat");window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
   </main>;
 }
