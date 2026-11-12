@@ -38,9 +38,9 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
     </article>
     <style jsx global>{`
       .episode-open-button{width:100%;max-width:360px;min-height:48px;justify-content:center;cursor:pointer}
-      .detail-watch-dock-button{display:flex;width:100%;flex:1;height:58px;margin-inline:auto;flex-direction:row;align-items:center;justify-content:center;text-align:center;gap:0;font-size:13px;font-weight:800;letter-spacing:.08em;color:#fff!important;background:transparent!important;box-shadow:none!important;transform:none!important}
+      .detail-watch-dock-button{display:flex!important;width:100%;flex:1 1 100%;min-width:0;height:58px;margin:0!important;flex-direction:row;align-items:center;justify-content:center;text-align:center;gap:0;font-size:13px;font-weight:800;letter-spacing:.08em;color:#fff!important;background:transparent!important;box-shadow:none!important;transform:none!important}
       .detail-watch-dock-button:active{transform:none!important;background:transparent!important;box-shadow:none!important}
-      .dock-wrap>.dock{width:min(92vw,380px);height:72px;min-height:72px;border-radius:9999px}
+      .dock-wrap>.dock{display:flex!important;grid-template-columns:none!important;justify-content:center!important;align-items:center!important;width:min(92vw,380px);height:72px;min-height:72px;border-radius:9999px}
       .episode-open-button:disabled{opacity:.45;cursor:not-allowed}
       .episode-count{margin-left:auto;padding:5px 8px;border-radius:999px;background:rgba(22,13,43,.18);font-size:10px}
       .episode-picker-overlay{position:fixed;inset:0;z-index:110;background:rgba(7,6,13,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 0 calc(12px + env(safe-area-inset-bottom))}
