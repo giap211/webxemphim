@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, Clapperboard, Film, Flame, Home, Play, Search } from "lucide-react";
+import { LiquidGlassDockSurface } from "@/components/liquid-glass-dock-surface";
 
 type Movie = { id: string; slug: string; name: string; originName: string; poster: string; backdrop: string; year: number | null; quality: string; language: string; currentEpisode: string; rating: number | null };
 type Feed = { status: boolean; items: Movie[] };
@@ -184,8 +185,23 @@ export default function HomePage() {
       @media(min-width:700px){.hero.hero-cinema{margin:0 18px;border-radius:0 0 20px 20px;height:clamp(520px,58vw,680px);max-height:680px}.hero-cinema .hero-content{left:42px;bottom:42px}.hero-topline{left:42px;right:42px}.hero-thumb{flex-basis:88px;max-width:88px;height:50px}}
       @media(max-width:600px){.hero.hero-cinema{height:570px;min-height:570px;max-height:610px;margin:0;border-radius:0 0 16px 16px}.hero-cinema .hero-image{background-position:center 25%}.hero-cinema:before{background:linear-gradient(90deg,rgba(5,8,15,.72),rgba(5,8,15,.12) 100%),linear-gradient(0deg,#05080f 0%,rgba(5,8,15,.9) 19%,rgba(5,8,15,.08) 68%,rgba(5,8,15,.32) 100%)}.hero-topline{top:76px;left:18px;right:18px}.hero-cinema .hero-content{left:19px;right:19px;bottom:22px;width:auto;max-width:none}.hero-cinema h1{font-size:clamp(29px,8vw,39px);max-width:100%;margin:9px 0}.hero-cinema .hero-desc{font-size:11px;margin:9px 0 14px;max-width:100%}.hero-cinema .primary-btn,.hero-detail-btn{height:43px}.hero-thumbnails{margin-top:17px;gap:6px}.hero-thumb{flex-basis:58px;max-width:58px;height:37px}}
 
+
+      /* GT Liquid Glass dock: WebGL refraction, glass rim and animated active lens */
+      .dock-wrap{position:fixed;z-index:60;left:0;right:0;bottom:0;padding:0 16px calc(10px + env(safe-area-inset-bottom));pointer-events:none}
+      .dock-wrap>.dock{position:relative;isolation:isolate;pointer-events:auto;width:min(92vw,380px);max-width:380px;min-height:72px;height:72px;margin:0 auto;padding:7px 9px;display:flex;align-items:center;justify-content:space-between;gap:4px;overflow:hidden;border-radius:9999px;background:transparent;border:1px solid rgba(255,255,255,.2);box-shadow:0 18px 48px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.04);backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-tap-highlight-color:transparent}
+      .gt-liquid-glass-blur{position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;background:rgba(255,255,255,.045);backdrop-filter:blur(16px) saturate(145%);-webkit-backdrop-filter:blur(16px) saturate(145%)}
+      .gt-liquid-glass-canvas{position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;border-radius:inherit;pointer-events:none;opacity:1}
+      .gt-liquid-glass-bubble{position:absolute;top:7px;bottom:7px;left:0;width:0;z-index:2;pointer-events:none;border-radius:9999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 3px 16px rgba(0,0,0,.08);transition:left .48s cubic-bezier(.34,1.2,.64,1),width .48s cubic-bezier(.34,1.2,.64,1)}
+      .dock-item{position:relative;z-index:3;isolation:isolate;flex:1;min-width:0;height:58px;padding:5px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-radius:9999px;background:transparent;color:rgba(255,255,255,.72);font-size:10.5px;font-weight:500;letter-spacing:-.01em;text-decoration:none;cursor:pointer;transition:color .22s ease,transform .3s cubic-bezier(.34,1.4,.64,1)}
+      .dock-item svg{width:23px;height:23px;stroke-width:1.8;flex:none}
+      .dock-item.active{color:#fff;background:transparent;box-shadow:none;transform:translateY(-1px)}
+      .dock-item.active svg{filter:none}
+      .dock-item:active{transform:scale(1.09)}
+      .dock.liquid-fallback{background:rgba(255,255,255,.08);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%)}
+      @media(prefers-reduced-motion:reduce){.dock-item,.gt-liquid-glass-bubble{transition:none}}
+      @media(min-width:700px){.dock-wrap{padding-bottom:14px}}
     `}</style>
 
-    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock">{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?active==="home"&&category===item.id:active==="search";return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory(item.id==="home"?"phim-moi-cap-nhat":item.id);window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
+    <nav className="dock-wrap" aria-label="Điều hướng chính"><div className="dock"><LiquidGlassDockSurface />{nav.map(item=>{const Icon=item.icon;const selected=item.id==="home"?active==="home"&&category==="phim-moi-cap-nhat":item.id==="phim-le"||item.id==="phim-bo"?active==="home"&&category===item.id:active==="search";return <button key={item.id} className={`dock-item ${selected?"active":""}`} onClick={()=>{if(item.id==="search"){setActive("search");setShowSearch(true);return;}setActive("home");setShowSearch(false);setSearch("");setCategory(item.id==="home"?"phim-moi-cap-nhat":item.id);window.scrollTo({top:0,behavior:"smooth"});}}><Icon size={22} strokeWidth={selected?2.3:1.8}/><span>{item.label}</span></button>;})}</div></nav>
   </main>;
 }
