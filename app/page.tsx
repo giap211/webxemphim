@@ -205,7 +205,7 @@ export default function HomePage() {
       .dock-item:active{transform:scale(1.09)}
       .dock.liquid-fallback{background:rgba(255,255,255,.08);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%)}
       @keyframes dockPageEnter{from{opacity:0;transform:translate3d(0,10px,0);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
-      .app-shell{animation:dockPageEnter .32s cubic-bezier(.2,.75,.25,1) both;will-change:opacity,transform}
+      .app-shell > :not(.dock-wrap){animation:dockPageEnter .32s cubic-bezier(.2,.75,.25,1) both}
       @media(prefers-reduced-motion:reduce){.app-shell{animation:none}.dock-item,.gt-liquid-glass-bubble{transition:none}}
       @media(min-width:700px){.dock-wrap{padding-bottom:14px}}
     `}</style>
