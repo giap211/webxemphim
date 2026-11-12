@@ -38,10 +38,9 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
     </article>
     <style jsx global>{`
       .episode-open-button{width:100%;max-width:360px;min-height:48px;justify-content:center;cursor:pointer}
-      .detail-watch-dock-button{width:100%;flex:1;height:58px;flex-direction:row;gap:10px;font-size:13px;font-weight:800;letter-spacing:.08em;color:#fff!important}
-      .detail-watch-dock-button svg{width:20px;height:20px}
+      .detail-watch-dock-button{width:100%;flex:1;height:58px;flex-direction:row;align-items:center;justify-content:center;gap:0;font-size:13px;font-weight:800;letter-spacing:.08em;color:#fff!important;background:transparent!important;box-shadow:none!important;transform:none!important}
+      .detail-watch-dock-button:active{transform:none!important;background:transparent!important;box-shadow:none!important}
       .dock-wrap>.dock{width:min(92vw,380px);height:72px;min-height:72px;border-radius:9999px}
-      .detail-watch-dock-button.active{background:rgba(255,255,255,.12)}
       .episode-open-button:disabled{opacity:.45;cursor:not-allowed}
       .episode-count{margin-left:auto;padding:5px 8px;border-radius:999px;background:rgba(22,13,43,.18);font-size:10px}
       .episode-picker-overlay{position:fixed;inset:0;z-index:110;background:rgba(7,6,13,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 0 calc(12px + env(safe-area-inset-bottom))}
@@ -75,6 +74,6 @@ export default function MoviePage({ params }: { params: Promise<{ slug: string }
       .episode-picker-footer{border-color:#292929;color:#999}
 
     `}</style>
-    <nav className="dock-wrap" aria-label="Xem phim"><div className="dock"><button type="button" className="dock-item active detail-watch-dock-button" onClick={()=>{if(selectedEpisode){playerRef.current?.scrollIntoView({behavior:"smooth",block:"center"});}else{setEpisodePickerOpen(true);}}}><Play size={22} fill="currentColor"/><span>XEM PHIM</span></button></div></nav>
+    <nav className="dock-wrap" aria-label="Xem phim"><div className="dock"><button type="button" className="dock-item detail-watch-dock-button" onClick={()=>{if(selectedEpisode){playerRef.current?.scrollIntoView({behavior:"smooth",block:"center"});}else{setEpisodePickerOpen(true);}}}>XEM PHIM</button></div></nav>
   </main>;
 }
