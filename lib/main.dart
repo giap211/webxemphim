@@ -277,12 +277,12 @@ class _PlayerPageState extends State<PlayerPage> {
   await p.seekTo(target < Duration.zero ? Duration.zero : (target > duration ? duration : target));
  }
 
- Future<void> _toggleFullscreen() async {
+ void _toggleFullscreen() {
   try {
    if (fullscreen) {
-    await html.document.exitFullscreen();
+    web.document.exitFullscreen();
    } else {
-    await html.document.documentElement?.requestFullscreen();
+    web.document.documentElement?.requestFullscreen();
    }
    if (mounted) setState(() => fullscreen = !fullscreen);
   } catch (_) {
@@ -312,7 +312,7 @@ class _PlayerPageState extends State<PlayerPage> {
     title:Text(widget.title,maxLines:1,overflow:TextOverflow.ellipsis),
     actions:[
      if(widget.ep.embed.isNotEmpty)
-      IconButton(tooltip:'Mở nguồn nhúng',onPressed:()=>html.window.open(widget.ep.embed,'_blank'),icon:const Icon(Icons.open_in_new)),
+      IconButton(tooltip:'Mở nguồn nhúng',onPressed:()=>web.window.open(widget.ep.embed,'_blank'),icon:const Icon(Icons.open_in_new)),
     ],
    ),
    body:Center(
@@ -413,7 +413,7 @@ class _PlayerPageState extends State<PlayerPage> {
                Text(error!,textAlign:TextAlign.center,style:const TextStyle(color:Colors.white70)),
                if(widget.ep.embed.isNotEmpty) ...[
                 const SizedBox(height:16),
-                FilledButton.icon(onPressed:()=>html.window.open(widget.ep.embed,'_blank'),icon:const Icon(Icons.open_in_new),label:const Text('Mở trình phát')),
+                FilledButton.icon(onPressed:()=>web.window.open(widget.ep.embed,'_blank'),icon:const Icon(Icons.open_in_new),label:const Text('Mở trình phát')),
                ],
               ],
              ],
