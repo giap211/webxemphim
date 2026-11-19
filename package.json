@@ -1,0 +1,8 @@
+{
+  "name": "webxemphim-flutter-api",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo API backend ready; Flutter source is in lib/"
+  }
+}
