@@ -1,26 +1,29 @@
-# webxemphim
+# XemPhim — Flutter
 
-Mobile-first movie streaming web app built from a clean Next.js foundation.
+Ứng dụng xem phim Flutter ưu tiên Android/iOS, có thể build thêm Flutter Web.
 
-## Stack
-- Next.js App Router + React + TypeScript
-- Mobile-first UI with safe-area aware fixed bottom glass dock
-- Server-side catalog proxy with PhimAPI primary and OPhim fallback
-- Short-lived CDN caching and lazy-loaded poster images
-
-## Development
-
+## Chạy ứng dụng
 ```bash
-npm install
-npm run dev
+flutter pub get
+flutter run --dart-define=API_BASE_URL=https://YOUR-VERCEL-DOMAIN
 ```
 
-Open http://localhost:3000.
+## Build Android
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://YOUR-VERCEL-DOMAIN
+```
 
-## API routes
-- `GET /api/movies?type=phim-moi-cap-nhat&page=1`
-- `GET /api/movies?type=phim-le&page=1`
-- `GET /api/movies?q=keyword`
-- `GET /api/movie/:slug`
+## Build Web
+```bash
+flutter build web --release --dart-define=API_BASE_URL=https://YOUR-VERCEL-DOMAIN
+```
 
-The app is intentionally independent from the legacy `gt` codebase. API providers are isolated behind route handlers so provider changes do not require UI changes.
+## API giữ lại
+- PhimAPI là nguồn chính: phimapi.com
+- OPhim là nguồn dự phòng: ophim.cc
+- GET /api/movies?type=phim-moi-cap-nhat&page=1
+- GET /api/movies?type=phim-le&page=1
+- GET /api/movies?q=keyword
+- GET /api/movie/:slug
+
+API proxy chuẩn hóa poster/backdrop, metadata, máy chủ và các tập m3u8/embed.
