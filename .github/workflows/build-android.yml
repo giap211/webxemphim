@@ -1,0 +1,28 @@
+name: Build Flutter Android APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "lib/**"
+      - "pubspec.yaml"
+      - ".github/workflows/build-android.yml"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Generate Android platform files
+        run: flutter create --platforms=android .
+      - name: Install packages
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze
+      - name: Build APK
+        run: flutter build apk --release --dart-define=API_BASE_URL=https://webxemphim-gg-4a11.vercel.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: webxemphim-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
