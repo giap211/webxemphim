@@ -75,7 +75,6 @@ class _XemPhimAppState extends State<XemPhimApp> {
   @override void initState(){super.initState();SharedPreferences.getInstance().then((p){if(mounted)setState(()=>mode=p.getBool('xf_light')==true?ThemeMode.light:ThemeMode.dark);});}
   Future<void> toggleTheme() async {setState(()=>mode=mode==ThemeMode.dark?ThemeMode.light:ThemeMode.dark);final p=await SharedPreferences.getInstance();await p.setBool('xf_light',mode==ThemeMode.light);}
   @override Widget build(BuildContext context)=>MaterialApp(debugShowCheckedModeBanner:false,title:'XemPhim',themeMode:mode,theme:ThemeData(brightness:Brightness.light,scaffoldBackgroundColor:const Color(0xFFF6F3FC),colorScheme:ColorScheme.fromSeed(seedColor:purple,brightness:Brightness.light),textTheme:GoogleFonts.interTextTheme(ThemeData.light().textTheme),useMaterial3:true),darkTheme:ThemeData(brightness:Brightness.dark,scaffoldBackgroundColor:bg,colorScheme:ColorScheme.fromSeed(seedColor:purple,brightness:Brightness.dark),textTheme:GoogleFonts.interTextTheme(ThemeData.dark().textTheme),useMaterial3:true),home:Shell(onTheme:toggleTheme));}
-}
 class Shell extends StatefulWidget {final VoidCallback onTheme;const Shell({super.key,required this.onTheme});@override State<Shell> createState()=>_ShellState();}
 class _ShellState extends State<Shell>{
   int tab=0;
