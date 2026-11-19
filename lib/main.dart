@@ -1,429 +1,141 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:web/web.dart' as web;
+import 'dart:ui' show ImageFilter;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
+import 'package:web/web.dart' as web;
 
-const bg=Color(0xFF090811), panel=Color(0xFF191426), purple=Color(0xFF9B79FF);
-
-String appImage(String raw) {
- final value = raw.trim();
- if (value.isEmpty) return '';
- if (value.startsWith('/api/image?')) return Uri.base.resolve(value).toString();
- String absolute = value;
- if (absolute.startsWith('//')) absolute = 'https:$absolute';
- if (absolute.startsWith('http://')) absolute = 'https://${absolute.substring(7)}';
- if (!absolute.startsWith('http://') && !absolute.startsWith('https://')) {
-  absolute = 'https://phimimg.com/${absolute.replaceFirst(RegExp(r'^/+'), '')}';
- }
- return Uri.base.resolve('/api/image?url=${Uri.encodeComponent(absolute)}').toString();
+const bg = Color(0xFF090811), panel = Color(0xFF191426), purple = Color(0xFF9B79FF);
+String imageProxy(String raw) {
+  final v = raw.trim();
+  if (v.isEmpty) return '';
+  if (v.startsWith('/api/image?')) return Uri.base.resolve(v).toString();
+  final url = v.startsWith('//') ? 'https:$v' : v.startsWith('http://') ? v.replaceFirst('http://','https://') : v.startsWith('https://') ? v : 'https://phimimg.com/\${v.replaceFirst(RegExp(r'^/+'), '')}';
+  return Uri.base.resolve('/api/image?url=\${Uri.encodeComponent(url)}').toString();
 }
-void main()=>runApp(const MovieApp());
+void main() { WidgetsFlutterBinding.ensureInitialized(); runApp(const XemPhimApp()); }
 
 class Movie {
- final String slug,name,original,poster,backdrop,quality,episode;
- final int? year;
- Movie(Map<String,dynamic> j):slug='${j['slug']??''}',name='${j['name']??'Phim'}',original='${j['originName']??''}',poster=appImage('${j['poster']??''}'),backdrop=appImage('${j['backdrop']??j['poster']??''}'),quality='${j['quality']??'HD'}',episode='${j['currentEpisode']??''}',year=int.tryParse('${j['year']??''}');
+  final String slug,name,original,poster,backdrop,quality,language,episode,time;
+  final int? year;
+  final List<String> tags;
+  Movie(Map<String,dynamic> j): slug='\${j['slug']??''}', name='\${j['name']??'Phim'}', original='\${j['originName']??''}', poster=imageProxy('\${j['poster']??''}'), backdrop=imageProxy('\${j['backdrop']??j['poster']??''}'), quality='\${j['quality']??'HD'}', language='\${j['language']??'Vietsub'}', episode='\${j['currentEpisode']??''}', time='\${j['time']??''}', year=int.tryParse('\${j['year']??''}'), tags=(j['categories'] as List? ?? []).map((e)=>'\$e').toList();
 }
-class Ep {final String name,embed,m3u8; Ep(Map<String,dynamic> j):name='${j['name']??''}',embed='${j['embed']??''}',m3u8='${j['m3u8']??''}';}
-class Server {final String name;final List<Ep> eps;Server(Map<String,dynamic> j):name='${j['name']??'Server'}',eps=(j['episodes'] as List? ?? []).map((e)=>Ep(Map<String,dynamic>.from(e))).toList();}
-class FilmDetail {
- final String name,content,backdrop,quality,language;final int? year;final List<Server> servers;
- FilmDetail(Map<String,dynamic> j):name='${j['name']??''}',content='${j['content']??''}',backdrop=appImage('${j['backdrop']??''}'),quality='${j['quality']??'HD'}',language='${j['language']??'Vietsub'}',year=int.tryParse('${j['year']??''}'),servers=(j['_servers'] as List? ?? []).map((e)=>Server(Map<String,dynamic>.from(e))).toList();
+class Episode { final String name,embed,m3u8; Episode(Map<String,dynamic> j):name='\${j['name']??''}',embed='\${j['embed']??''}',m3u8='\${j['m3u8']??''}'; }
+class MovieServer { final String name; final List<Episode> episodes; MovieServer(Map<String,dynamic> j):name='\${j['name']??'Server'}',episodes=(j['episodes'] as List? ?? []).map((e)=>Episode(Map<String,dynamic>.from(e))).toList(); }
+class Film {
+  final String name,content,backdrop,quality,language,time,trailer;
+  final int? year;
+  final List<String> actors,directors,categories,countries;
+  final List<MovieServer> servers;
+  Film(Map<String,dynamic> j):name='\${j['name']??''}',content='\${j['content']??''}',backdrop=imageProxy('\${j['backdrop']??''}'),quality='\${j['quality']??'HD'}',language='\${j['language']??'Vietsub'}',time='\${j['time']??''}',trailer='\${j['trailer']??''}',year=int.tryParse('\${j['year']??''}'),actors=(j['actors'] as List? ?? []).map((e)=>'\$e').toList(),directors=(j['directors'] as List? ?? []).map((e)=>'\$e').toList(),categories=(j['categories'] as List? ?? []).map((e)=>'\$e').toList(),countries=(j['countries'] as List? ?? []).map((e)=>'\$e').toList(),servers=(j['_servers'] as List? ?? []).map((e)=>MovieServer(Map<String,dynamic>.from(e))).toList();
 }
 class Api {
- static Future<List<Movie>> list({String type='phim-moi-cap-nhat',String? q}) async {
-  final uri=Uri.base.resolve('/api/movies').replace(queryParameters:{if(q!=null&&q.isNotEmpty)'q':q else 'type':type,'page':'1'});
-  final r=await http.get(uri).timeout(const Duration(seconds:25));if(r.statusCode!=200)throw Exception('API không phản hồi');
-  final j=jsonDecode(r.body);return ((j['items'] as List?)??[]).map((e)=>Movie(Map<String,dynamic>.from(e))).toList();
- }
- static Future<FilmDetail> detail(String slug) async {
-  final r=await http.get(Uri.base.resolve('/api/movie/${Uri.encodeComponent(slug)}')).timeout(const Duration(seconds:25));
-  if(r.statusCode!=200)throw Exception('Không lấy được thông tin phim');
-  final j=Map<String,dynamic>.from(jsonDecode(r.body));final m=Map<String,dynamic>.from(j['movie']);m['_servers']=j['servers']??[];return FilmDetail(m);
- }
-}
-class MovieApp extends StatelessWidget {const MovieApp({super.key});@override Widget build(BuildContext c)=>MaterialApp(debugShowCheckedModeBanner:false,title:'XemPhim',theme:ThemeData(brightness:Brightness.dark,scaffoldBackgroundColor:bg,colorScheme:ColorScheme.fromSeed(seedColor:purple,brightness:Brightness.dark),textTheme:GoogleFonts.interTextTheme(ThemeData.dark().textTheme),useMaterial3:true),home:const Home());}
-class Home extends StatefulWidget {const Home({super.key});@override State<Home> createState()=>_HomeState();}
-class _HomeState extends State<Home>{
- int tab=0;final pages=const ['phim-moi-cap-nhat','phim-le','phim-bo'];final titles=const ['Khám phá','Phim lẻ','Phim bộ'];
- @override Widget build(BuildContext c)=>Scaffold(body:IndexedStack(index:tab,children:[const Explore(),const Category(type:'phim-le',title:'Phim lẻ'),const Category(type:'phim-bo',title:'Phim bộ'),const SearchPage()]),bottomNavigationBar:SafeArea(minimum:const EdgeInsets.fromLTRB(14,0,14,10),child:Container(height:68,decoration:BoxDecoration(color:const Color(0xEE211A32),borderRadius:BorderRadius.circular(25),border:Border.all(color:Colors.white12)),child:Row(children:[_nav(0,Icons.home_rounded,'Trang chủ'),_nav(1,Icons.movie_outlined,'Phim lẻ'),_nav(2,Icons.live_tv_rounded,'Phim bộ'),_nav(3,Icons.search_rounded,'Tìm kiếm')]))));
- Widget _nav(int i,IconData icon,String label)=>Expanded(child:InkWell(borderRadius:BorderRadius.circular(20),onTap:()=>setState(()=>tab=i),child:AnimatedContainer(duration:const Duration(milliseconds:220),margin:const EdgeInsets.all(5),decoration:BoxDecoration(gradient:tab==i?const LinearGradient(colors:[Color(0xFFB99BFF),Color(0xFF7650D8)]):null,borderRadius:BorderRadius.circular(19)),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(icon,size:21),Text(label,style:const TextStyle(fontSize:10,fontWeight:FontWeight.w700))]))));
-}
-class Explore extends StatefulWidget {const Explore({super.key});@override State<Explore> createState()=>_ExploreState();}
-class _ExploreState extends State<Explore>{
- late Future<List<Movie>> fresh;@override void initState(){super.initState();fresh=Api.list();}
- @override
- Widget build(BuildContext c) {
-  return RefreshIndicator(
-   color: purple,
-   onRefresh: () async { setState(() { fresh = Api.list(); }); },
-   child: CustomScrollView(
-    slivers: [
-     SliverToBoxAdapter(
-      child: Padding(
-       padding: const EdgeInsets.fromLTRB(20,54,20,18),
-       child: Row(children: [
-        const Icon(Icons.movie_filter,color:purple,size:28),
-        const SizedBox(width:9),
-        Text('XEMPHIM',style:GoogleFonts.inter(fontWeight:FontWeight.w900,letterSpacing:2)),
-        const Spacer(),
-        const Icon(Icons.notifications_none),
-       ]),
-      ),
-     ),
-     SliverToBoxAdapter(
-      child: SizedBox(
-       height: 400,
-       child: FutureBuilder<List<Movie>>(
-        future: fresh,
-        builder: (context, snapshot) {
-         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child:CircularProgressIndicator(color:purple));
-         }
-         if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child:Text('Chưa tải được danh sách phim'));
-         }
-         final movie = snapshot.data!.first;
-         return GestureDetector(
-          onTap: () => Navigator.push(context,MaterialPageRoute(builder: (_) => DetailPage(movie:movie))),
-          child: Container(
-           margin: const EdgeInsets.symmetric(horizontal:15),
-           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25),
-            image: DecorationImage(image:CachedNetworkImageProvider(movie.backdrop),fit:BoxFit.cover),
-           ),
-           child: Container(
-            padding: const EdgeInsets.all(22),
-            alignment: Alignment.bottomLeft,
-            decoration: BoxDecoration(
-             borderRadius: BorderRadius.circular(25),
-             gradient: const LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,bg]),
-            ),
-            child: Column(
-             mainAxisAlignment: MainAxisAlignment.end,
-             crossAxisAlignment: CrossAxisAlignment.start,
-             children: [
-              const Text('ĐỀ XUẤT HÔM NAY',style:TextStyle(color:Color(0xFFC6AEFF),letterSpacing:2)),
-              Text(movie.name,style:const TextStyle(fontSize:28,fontWeight:FontWeight.w900)),
-              Text('${movie.year ?? ''} • ${movie.quality}'),
-              FilledButton.icon(
-               onPressed: () => Navigator.push(context,MaterialPageRoute(builder: (_) => DetailPage(movie:movie))),
-               icon: const Icon(Icons.play_arrow),
-               label: const Text('Xem ngay'),
-              ),
-             ],
-            ),
-           ),
-          ),
-         );
-        },
-       ),
-      ),
-     ),
-     for (final type in ['phim-moi-cap-nhat','phim-le','phim-bo','hoat-hinh'])
-      SliverToBoxAdapter(
-       child: MovieRow(
-        title: type == 'phim-le' ? 'Phim lẻ' : type == 'phim-bo' ? 'Phim bộ' : type == 'hoat-hinh' ? 'Hoạt hình' : 'Mới cập nhật',
-        future: Api.list(type:type),
-       ),
-      ),
-     const SliverToBoxAdapter(child:SizedBox(height:25)),
-    ],
-   ),
-  );
- }
-
-}
-
-class Category extends StatelessWidget {final String type,title;const Category({super.key,required this.type,required this.title});@override Widget build(BuildContext c)=>SafeArea(child:Column(children:[Padding(padding:const EdgeInsets.all(20),child: Text(title,style:const TextStyle(fontSize:25,fontWeight:FontWeight.w900))),Expanded(child:FutureBuilder<List<Movie>>(future:Api.list(type:type),builder:(c,s){if(!s.hasData)return const Center(child:CircularProgressIndicator(color:purple));return GridView.builder(padding:const EdgeInsets.all(13),gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:3,childAspectRatio:.48,crossAxisSpacing:10,mainAxisSpacing:12),itemCount:s.data!.length,itemBuilder:(c,i)=>Poster(movie:s.data![i]));}))]));}
-class SearchPage extends StatefulWidget{const SearchPage({super.key});@override State<SearchPage> createState()=>_SearchPageState();}
-class _SearchPageState extends State<SearchPage>{final ctl=TextEditingController();Future<List<Movie>>? result;@override void dispose(){ctl.dispose();super.dispose();}@override Widget build(BuildContext c)=>SafeArea(child:Column(children:[Padding(padding:const EdgeInsets.all(16),child:TextField(controller:ctl,onSubmitted:(q)=>setState(()=>result=Api.list(q:q)),decoration:InputDecoration(hintText:'Tìm tên phim...',prefixIcon:const Icon(Icons.search),filled:true,fillColor:panel,border:OutlineInputBorder(borderRadius:BorderRadius.circular(18),borderSide:BorderSide.none)))),Expanded(child:FutureBuilder<List<Movie>>(future:result,builder:(c,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator(color:purple));if(!s.hasData)return const Center(child:Text('Nhập tên phim để tìm kiếm'));return GridView.builder(padding:const EdgeInsets.all(12),gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:3,childAspectRatio:.48,crossAxisSpacing:10,mainAxisSpacing:12),itemCount:s.data!.length,itemBuilder:(c,i)=>Poster(movie:s.data![i]));}))]));}
-class MovieRow extends StatelessWidget{final String title;final Future<List<Movie>> future;const MovieRow({super.key,required this.title,required this.future});@override Widget build(BuildContext c)=>Padding(padding:const EdgeInsets.only(top:20),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(18,0,18,12),child:Text(title,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:18))),SizedBox(height:240,child:FutureBuilder<List<Movie>>(future:future,builder:(c,s)=>!s.hasData?const Center(child:CircularProgressIndicator(color:purple)):ListView.separated(padding:const EdgeInsets.symmetric(horizontal:15),scrollDirection:Axis.horizontal,itemCount:s.data!.length,separatorBuilder:(_,__)=>const SizedBox(width:12),itemBuilder:(c,i)=>SizedBox(width:125,child:Poster(movie:s.data![i])))))]));}
-class Poster extends StatelessWidget {
- final Movie movie;
- const Poster({super.key,required this.movie});
- @override
- Widget build(BuildContext c) => GestureDetector(
-  onTap: () => Navigator.push(c,MaterialPageRoute(builder: (_) => DetailPage(movie:movie))),
-  child: Column(
-   crossAxisAlignment: CrossAxisAlignment.start,
-   children: [
-    AspectRatio(
-     aspectRatio: 2/3,
-     child: ClipRRect(
-      borderRadius: BorderRadius.circular(13),
-      child: CachedNetworkImage(
-       imageUrl: movie.poster,
-       fit: BoxFit.cover,
-       width: double.infinity,
-       placeholder: (_,__) => Container(color:panel,child:const Center(child:CircularProgressIndicator(strokeWidth:2,color:purple))),
-       errorWidget: (_,__,___) => Container(color:panel,child:const Center(child:Icon(Icons.movie_outlined,color:Colors.white38,size:32))),
-      ),
-     ),
-    ),
-    const SizedBox(height:6),
-    SizedBox(
-     height:32,
-     child: Text(movie.name,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:11,fontWeight:FontWeight.bold,height:1.25)),
-    ),
-   ],
-  ),
- );
-}
-class DetailPage extends StatelessWidget{final Movie movie;const DetailPage({super.key,required this.movie});@override Widget build(BuildContext c)=>Scaffold(body:FutureBuilder<FilmDetail>(future:Api.detail(movie.slug),builder:(c,s){if(!s.hasData)return const Center(child:CircularProgressIndicator(color:purple));final d=s.data!;return CustomScrollView(slivers:[SliverAppBar(expandedHeight:300,pinned:true,flexibleSpace:FlexibleSpaceBar(title:Text(d.name),background:Stack(fit:StackFit.expand,children:[CachedNetworkImage(imageUrl:d.backdrop,fit:BoxFit.cover),const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,bg])))]))),SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${d.year??''} • ${d.quality} • ${d.language}',style:const TextStyle(color:Colors.white60)),const SizedBox(height:15),FilledButton.icon(onPressed:()=>showEpisodes(c,d),icon:const Icon(Icons.play_arrow),label:const Text('Chọn tập xem phim')),const SizedBox(height:20),const Text('NỘI DUNG',style:TextStyle(color:purple,fontWeight:FontWeight.bold)),const SizedBox(height:8),Text(d.content.replaceAll(RegExp(r'<[^>]*>'),' '),style:const TextStyle(height:1.6,color:Colors.white70))])))]);}));}
-void showEpisodes(BuildContext context, FilmDetail detail) {
- showModalBottomSheet(
-  context: context,
-  isScrollControlled: true,
-  backgroundColor: panel,
-  builder: (sheetContext) => SafeArea(
-   child: SizedBox(
-    height: MediaQuery.of(sheetContext).size.height * .85,
-    child: Column(
-     children: [
-      Padding(
-       padding: const EdgeInsets.all(16),
-       child: Text('Chọn tập • ${detail.name}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:18)),
-      ),
-      Expanded(
-       child: ListView(
-        children: [
-         for (final server in detail.servers) ...[
-          Padding(
-           padding: const EdgeInsets.all(12),
-           child: Text(server.name,style:const TextStyle(color:purple,fontWeight:FontWeight.bold)),
-          ),
-          Wrap(
-           children: [
-            for (final episode in server.eps)
-             Padding(
-              padding: const EdgeInsets.all(5),
-              child: FilledButton.tonal(
-               onPressed: () => Navigator.push(sheetContext,MaterialPageRoute(builder: (_) => PlayerPage(title:detail.name,ep:episode))),
-               child: Text(episode.name),
-              ),
-             ),
-           ],
-          ),
-         ],
-        ],
-       ),
-      ),
-     ],
-    ),
-   ),
-  ),
- );
-}
-
-class PlayerPage extends StatefulWidget {
- final String title;
- final Ep ep;
- const PlayerPage({super.key,required this.title,required this.ep});
- @override State<PlayerPage> createState()=>_PlayerPageState();
-}
-
-class _PlayerPageState extends State<PlayerPage> {
- VideoPlayerController? player;
- String? error;
- bool controlsVisible = true;
- bool seeking = false;
- bool muted = false;
- bool fullscreen = false;
- double seekValue = 0;
- double volume = 1;
-
- @override
- void initState() {
-  super.initState();
-  if (widget.ep.m3u8.isNotEmpty) {
-   player = VideoPlayerController.networkUrl(Uri.parse(widget.ep.m3u8));
-   player!.addListener(_videoChanged);
-   player!.initialize().then((_) {
-    if (!mounted) return;
-    setState(() {});
-    player!.play();
-   }).catchError((_) {
-    if (mounted) setState(() => error='Nguồn phim không phát được. Hãy thử server khác.');
-   });
-  } else if (widget.ep.embed.isNotEmpty) {
-   error = 'Nguồn này dùng trình phát nhúng. Mở nguồn trong tab mới để xem phim.';
-  } else {
-   error = 'Không tìm thấy đường dẫn phát phim.';
+  static Future<List<Movie>> list({String type='phim-moi-cap-nhat',String? q}) async {
+    final uri=Uri.base.resolve('/api/movies').replace(queryParameters:{if(q!=null&&q.trim().isNotEmpty)'q':q.trim() else 'type':type,'page':'1'});
+    final r=await http.get(uri).timeout(const Duration(seconds:25));
+    if(r.statusCode!=200) throw Exception('Không tải được phim');
+    final j=Map<String,dynamic>.from(jsonDecode(r.body));
+    return (j['items'] as List? ?? []).map((e)=>Movie(Map<String,dynamic>.from(e))).where((m)=>m.slug.isNotEmpty).toList();
   }
- }
-
- void _videoChanged() {
-  if (!mounted || seeking || player == null || !player!.value.isInitialized) return;
-  setState(() => seekValue = player!.value.position.inMilliseconds.toDouble());
- }
-
- String _time(Duration value) {
-  final minutes = value.inMinutes.remainder(60).toString().padLeft(2,'0');
-  final seconds = value.inSeconds.remainder(60).toString().padLeft(2,'0');
-  final hours = value.inHours;
-  return hours > 0 ? '${hours.toString().padLeft(2,'0')}:$minutes:$seconds' : '$minutes:$seconds';
- }
-
- Future<void> _seek(int seconds) async {
-  final p = player;
-  if (p == null || !p.value.isInitialized) return;
-  final target = p.value.position + Duration(seconds:seconds);
-  final duration = p.value.duration;
-  await p.seekTo(target < Duration.zero ? Duration.zero : (target > duration ? duration : target));
- }
-
- void _toggleFullscreen() {
-  try {
-   if (fullscreen) {
-    web.document.exitFullscreen();
-   } else {
-    web.document.documentElement?.requestFullscreen();
-   }
-   if (mounted) setState(() => fullscreen = !fullscreen);
-  } catch (_) {
-   if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Trình duyệt này không hỗ trợ toàn màn hình.')));
+  static Future<Film> detail(String slug) async {
+    final r=await http.get(Uri.base.resolve('/api/movie/\${Uri.encodeComponent(slug)}')).timeout(const Duration(seconds:25));
+    if(r.statusCode!=200) throw Exception('Không lấy được thông tin phim');
+    final j=Map<String,dynamic>.from(jsonDecode(r.body));
+    final m=Map<String,dynamic>.from(j['movie'] as Map? ?? {}); m['_servers']=j['servers']??[];
+    return Film(m);
   }
- }
-
- @override
- void dispose() {
-  player?.removeListener(_videoChanged);
-  player?.dispose();
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  super.dispose();
- }
-
- @override
- Widget build(BuildContext c) {
-  final p = player;
-  final ready = p?.value.isInitialized == true;
-  final duration = ready ? p!.value.duration : Duration.zero;
-  final position = ready ? p!.value.position : Duration.zero;
-  final playing = ready && p!.value.isPlaying;
-  return Scaffold(
-   backgroundColor:Colors.black,
-   appBar:AppBar(
-    backgroundColor:Colors.black,
-    title:Text(widget.title,maxLines:1,overflow:TextOverflow.ellipsis),
-    actions:[
-     if(widget.ep.embed.isNotEmpty)
-      IconButton(tooltip:'Mở nguồn nhúng',onPressed:()=>web.window.open(widget.ep.embed,'_blank'),icon:const Icon(Icons.open_in_new)),
-    ],
-   ),
-   body:Center(
-    child:ConstrainedBox(
-     constraints:const BoxConstraints(maxWidth:1100),
-     child:AspectRatio(
-      aspectRatio:16/9,
-      child:ColoredBox(
-       color:Colors.black,
-       child:ready
-        ? GestureDetector(
-           behavior:HitTestBehavior.opaque,
-           onTap:()=>setState(()=>controlsVisible=!controlsVisible),
-           child:Stack(
-            fit:StackFit.expand,
-            children:[
-             Center(child:AspectRatio(aspectRatio:p!.value.aspectRatio,child:VideoPlayer(p))),
-             if(controlsVisible)
-              DecoratedBox(
-               decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0x99000000),Colors.transparent,Color(0xCC000000)],stops:[0,.42,1])),
-               child:Column(
-                children:[
-                 Padding(
-                  padding:const EdgeInsets.fromLTRB(14,8,8,0),
-                  child:Row(children:[
-                   Expanded(child:Text('${widget.title} • ${widget.ep.name}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w700))),
-                   IconButton(onPressed:_toggleFullscreen,icon:Icon(fullscreen?Icons.fullscreen_exit:Icons.fullscreen,color:Colors.white)),
-                  ]),
-                 ),
-                 const Spacer(),
-                 Row(
-                  mainAxisAlignment:MainAxisAlignment.center,
-                  children:[
-                   IconButton(iconSize:34,onPressed:()=>_seek(-10),icon:const Icon(Icons.replay_10,color:Colors.white)),
-                   const SizedBox(width:28),
-                   IconButton(
-                    iconSize:58,
-                    onPressed:()=>setState(()=>playing?p!.pause():p!.play()),
-                    icon:Icon(playing?Icons.pause_circle_filled:Icons.play_circle_fill,color:Colors.white),
-                   ),
-                   const SizedBox(width:28),
-                   IconButton(iconSize:34,onPressed:()=>_seek(10),icon:const Icon(Icons.forward_10,color:Colors.white)),
-                  ],
-                 ),
-                 const Spacer(),
-                 Padding(
-                  padding:const EdgeInsets.fromLTRB(14,0,14,12),
-                  child:Column(
-                   children:[
-                    SliderTheme(
-                     data:SliderTheme.of(c).copyWith(trackHeight:3,thumbShape:const RoundSliderThumbShape(enabledThumbRadius:6),overlayShape:const RoundSliderOverlayShape(overlayRadius:12)),
-                     child:Slider(
-                      min:0,
-                      max:(duration.inMilliseconds>0?duration.inMilliseconds:1).toDouble(),
-                      value:seekValue.clamp(0,(duration.inMilliseconds>0?duration.inMilliseconds:1).toDouble()).toDouble(),
-                      onChangeStart:(_)=>setState(()=>seeking=true),
-                      onChanged:(v)=>setState(()=>seekValue=v),
-                      onChangeEnd:(v){p!.seekTo(Duration(milliseconds:v.round()));setState(()=>seeking=false);},
-                     ),
-                    ),
-                    Row(
-                     children:[
-                      Text('${_time(position)} / ${_time(duration)}',style:const TextStyle(fontSize:11,color:Colors.white70)),
-                      const Spacer(),
-                      IconButton(
-                       visualDensity:VisualDensity.compact,
-                       onPressed:()=>setState((){muted=!muted;p!.setVolume(muted?0:volume);}),
-                       icon:Icon(muted?Icons.volume_off:Icons.volume_up,color:Colors.white,size:20),
-                      ),
-                      SizedBox(
-                       width:90,
-                       child:Slider(
-                        min:0,max:1,value:muted?0:volume,
-                        onChanged:(v){setState((){volume=v;muted=v==0;});p!.setVolume(v);},
-                       ),
-                      ),
-                     ],
-                    ),
-                   ],
-                  ),
-                 ),
-                ],
-               ),
-              ),
-            ],
-           ),
-          )
-        : Center(
-           child:Padding(
-            padding:const EdgeInsets.all(24),
-            child:Column(
-             mainAxisSize:MainAxisSize.min,
-             children:[
-              if(error==null) const CircularProgressIndicator(color:purple),
-              if(error!=null) ...[
-               const Icon(Icons.play_circle_outline,color:purple,size:48),
-               const SizedBox(height:12),
-               Text(error!,textAlign:TextAlign.center,style:const TextStyle(color:Colors.white70)),
-               if(widget.ep.embed.isNotEmpty) ...[
-                const SizedBox(height:16),
-                FilledButton.icon(onPressed:()=>web.window.open(widget.ep.embed,'_blank'),icon:const Icon(Icons.open_in_new),label:const Text('Mở trình phát')),
-               ],
-              ],
-             ],
-            ),
-           ),
-          ),
-      ),
-     ),
-    ),
-   ),
-  );
- }
 }
+class Library {
+  static Future<List<Map<String,dynamic>>> read(String key) async {
+    final p=await SharedPreferences.getInstance(); final raw=p.getString(key);
+    if(raw==null) return [];
+    try { return (jsonDecode(raw) as List).map((e)=>Map<String,dynamic>.from(e)).toList(); } catch(_){return [];}
+  }
+  static Map<String,dynamic> data(Movie m)=>{'slug':m.slug,'name':m.name,'poster':m.poster,'backdrop':m.backdrop,'year':m.year,'quality':m.quality,'language':m.language,'currentEpisode':m.episode};
+  static Future<bool> favorite(Movie m) async {
+    final items=await read('xf_favorites'); final exists=items.any((e)=>e['slug']==m.slug);
+    items.removeWhere((e)=>e['slug']==m.slug); if(!exists) items.insert(0,data(m));
+    final p=await SharedPreferences.getInstance(); await p.setString('xf_favorites',jsonEncode(items.take(100).toList())); return !exists;
+  }
+  static Future<void> progress(Movie m,String ep,int seconds) async {
+    final items=await read('xf_history'); items.removeWhere((e)=>e['slug']==m.slug);
+    items.insert(0,{...data(m),'episode':ep,'seconds':seconds});
+    final p=await SharedPreferences.getInstance(); await p.setString('xf_history',jsonEncode(items.take(50).toList()));
+  }
+}
+class XemPhimApp extends StatefulWidget { const XemPhimApp({super.key}); @override State<XemPhimApp> createState()=>_XemPhimAppState(); }
+class _XemPhimAppState extends State<XemPhimApp> {
+  ThemeMode mode=ThemeMode.dark;
+  @override void initState(){super.initState();SharedPreferences.getInstance().then((p){if(mounted)setState(()=>mode=p.getBool('xf_light')==true?ThemeMode.light:ThemeMode.dark);});}
+  Future<void> toggleTheme() async {setState(()=>mode=mode==ThemeMode.dark?ThemeMode.light:ThemeMode.dark);final p=await SharedPreferences.getInstance();await p.setBool('xf_light',mode==ThemeMode.light);}
+  @override Widget build(BuildContext context)=>MaterialApp(debugShowCheckedModeBanner:false,title:'XemPhim',themeMode:mode,theme:ThemeData(brightness:Brightness.light,scaffoldBackgroundColor:const Color(0xFFF6F3FC),colorScheme:ColorScheme.fromSeed(seedColor:purple,brightness:Brightness.light),textTheme:GoogleFonts.interTextTheme(ThemeData.light().textTheme),useMaterial3:true),darkTheme:ThemeData(brightness:Brightness.dark,scaffoldBackgroundColor:bg,colorScheme:ColorScheme.fromSeed(seedColor:purple,brightness:Brightness.dark),textTheme:GoogleFonts.interTextTheme(ThemeData.dark().textTheme),useMaterial3:true),home:Shell(onTheme:toggleTheme));}
+}
+class Shell extends StatefulWidget {final VoidCallback onTheme;const Shell({super.key,required this.onTheme});@override State<Shell> createState()=>_ShellState();}
+class _ShellState extends State<Shell>{
+  int tab=0;
+  void open(Movie m)=>Navigator.push(context,MaterialPageRoute(builder:(_)=>DetailPage(movie:m)));
+  @override Widget build(BuildContext context)=>Scaffold(extendBody:true,body:IndexedStack(index:tab,children:[HomePage(onOpen:open),CatalogPage(type:'phim-le',title:'Phim lẻ',onOpen:open),CatalogPage(type:'phim-bo',title:'Phim bộ',onOpen:open),SearchPage(onOpen:open),AccountPage(onOpen:open,onTheme:widget.onTheme)]),bottomNavigationBar:GlassDock(selected:tab,onSelect:(v)=>setState(()=>tab=v)));
+}
+class GlassDock extends StatelessWidget {
+  final int selected;final ValueChanged<int> onSelect;
+  const GlassDock({super.key,required this.selected,required this.onSelect});
+  static const items=[(Icons.home_rounded,'Trang chủ'),(Icons.movie_filter_rounded,'Phim lẻ'),(Icons.live_tv_rounded,'Phim bộ'),(Icons.search_rounded,'Tìm kiếm'),(Icons.person_outline_rounded,'Tài khoản')];
+  @override Widget build(BuildContext context){
+    final dark=Theme.of(context).brightness==Brightness.dark; final fg=dark?Colors.white:const Color(0xFF281D3B);
+    return SafeArea(minimum:const EdgeInsets.fromLTRB(12,0,12,10),child:ClipRRect(borderRadius:BorderRadius.circular(27),child:BackdropFilter(filter:ImageFilter.blur(sigmaX:22,sigmaY:22),child:Container(height:74,decoration:BoxDecoration(color:dark?const Color(0xC91D1729):const Color(0xDDFBF9FF),borderRadius:BorderRadius.circular(27),border:Border.all(color:dark?Colors.white24:violet.withOpacity(.22)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.22),blurRadius:25,offset:const Offset(0,8))]),child:Stack(children:[
+      Positioned.fill(child:IgnorePointer(child:DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Colors.white.withOpacity(dark?.17:.7),Colors.white.withOpacity(.015),purple.withOpacity(.09)]))))),
+      AnimatedAlign(duration:const Duration(milliseconds:360),curve:Curves.easeOutCubic,alignment:Alignment(-1+selected*.5,0),child:FractionallySizedBox(widthFactor:.2,child:Padding(padding:const EdgeInsets.all(5),child:Container(decoration:BoxDecoration(borderRadius:BorderRadius.circular(21),gradient:const LinearGradient(colors:[Color(0xFFB99BFF),Color(0xFF7650D8)]),boxShadow:[BoxShadow(color:purple.withOpacity(.35),blurRadius:16)]))))),
+      Row(children:List.generate(items.length,(i){final active=i==selected;final item=items[i];return Expanded(child:InkWell(onTap:()=>onSelect(i),borderRadius:BorderRadius.circular(20),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(item.$1,size:22,color:active?Colors.white:fg.withOpacity(.68)),const SizedBox(height:3),Text(item.$2,style:TextStyle(fontSize:9,fontWeight:FontWeight.w700,color:active?Colors.white:fg.withOpacity(.68)))])));})),
+    ])))));
+  }
+}
+class HomePage extends StatefulWidget {final ValueChanged<Movie> onOpen;const HomePage({super.key,required this.onOpen});@override State<HomePage> createState()=>_HomePageState();}
+class _HomePageState extends State<HomePage>{
+  late Future<List<Movie>> latest,singles,series,anime;final PageController hero=PageController(viewportFraction:.93);Timer? timer;List<Movie> featured=[];int active=0;
+  @override void initState(){super.initState();_load(); }
+  void _load(){latest=Api.list();singles=Api.list(type:'phim-le');series=Api.list(type:'phim-bo');anime=Api.list(type:'hoat-hinh');latest.then((v){if(!mounted)return;setState(()=>featured=v.take(6).toList());timer?.cancel();timer=Timer.periodic(const Duration(seconds:6),(_){if(mounted&&featured.length>1&&hero.hasClients)hero.animateToPage((active+1)%featured.length,duration:const Duration(milliseconds:600),curve:Curves.easeInOut);});}).catchError((_){ });}
+  @override void dispose(){timer?.cancel();hero.dispose();super.dispose();}
+  Future<void> refresh()async{setState(_load);try{await latest;}catch(_){}}
+  @override Widget build(BuildContext context)=>RefreshIndicator(color:purple,onRefresh:refresh,child:CustomScrollView(slivers:[
+    SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.fromLTRB(20,52,20,12),child:Row(children:[const Icon(Icons.movie_filter,color:purple,size:27),const SizedBox(width:9),const Text('XEMPHIM',style:TextStyle(fontWeight:FontWeight.w900,letterSpacing:2)),const Spacer(),IconButton(onPressed:()=>ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Thông báo sẽ đồng bộ khi có tài khoản.'))),icon:const Icon(Icons.notifications_none_rounded))]))),
+    SliverToBoxAdapter(child:FutureBuilder<List<Movie>>(future:latest,builder:(c,s){final movies=featured.isNotEmpty?featured:(s.data??[]).take(6).toList();if(movies.isEmpty){return const SizedBox(height:450,child:Center(child:CircularProgressIndicator(color:purple)));}return Column(children:[
+      SizedBox(height:490,child:PageView.builder(controller:hero,itemCount:movies.length,onPageChanged:(v)=>setState(()=>active=v),itemBuilder:(c,i)=>Padding(padding:const EdgeInsets.symmetric(horizontal:5),child:HeroCard(movie:movies[i],onTap:()=>widget.onOpen(movies[i]))))),
+      if(movies.length>1) SizedBox(height:74,child:ListView.separated(padding:const EdgeInsets.fromLTRB(20,8,20,12),scrollDirection:Axis.horizontal,itemCount:movies.length,separatorBuilder:(_,__)=>const SizedBox(width:9),itemBuilder:(c,i)=>GestureDetector(onTap:()=>hero.animateToPage(i,duration:const Duration(milliseconds:400),curve:Curves.easeOut),child:AnimatedContainer(duration:const Duration(milliseconds:200),width:49,decoration:BoxDecoration(borderRadius:BorderRadius.circular(9),border:Border.all(color:i==active?const Color(0xFFC5AEFF):Colors.white24,width:i==active?2:1),boxShadow:i==active?[BoxShadow(color:purple.withOpacity(.35),blurRadius:12)]:[]),child:ClipRRect(borderRadius:BorderRadius.circular(8),child:MovieImage(url:movies[i].poster)))))),
+    ]);})),
+    SliverToBoxAdapter(child:MovieShelf(title:'Mới cập nhật',future:latest,onOpen:widget.onOpen)),
+    SliverToBoxAdapter(child:MovieShelf(title:'Phim lẻ',future:singles,onOpen:widget.onOpen)),
+    SliverToBoxAdapter(child:MovieShelf(title:'Phim bộ',future:series,onOpen:widget.onOpen)),
+    SliverToBoxAdapter(child:MovieShelf(title:'Hoạt hình',future:anime,onOpen:widget.onOpen)),
+    const SliverToBoxAdapter(child:SizedBox(height:110)),
+  ]));
+}
+class HeroCard extends StatelessWidget {final Movie movie;final VoidCallback onTap;const HeroCard({super.key,required this.movie,required this.onTap});@override Widget build(BuildContext context)=>GestureDetector(onTap:onTap,child:ClipRRect(borderRadius:BorderRadius.circular(27),child:Stack(fit:StackFit.expand,children:[MovieImage(url:movie.backdrop.isEmpty?movie.poster:movie.backdrop),const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0x22100A20),Color(0xF0090811)],stops:[.2,1]))),Positioned(left:22,right:20,bottom:26,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('ĐỀ XUẤT HÔM NAY',style:TextStyle(color:Color(0xFFC5AEFF),fontSize:10,letterSpacing:2,fontWeight:FontWeight.w900)),const SizedBox(height:10),Text(movie.name,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:30,height:1.05,fontWeight:FontWeight.w900,color:Colors.white)),const SizedBox(height:9),Text('\${movie.year??''}  •  \${movie.quality}  •  \${movie.language}',style:const TextStyle(color:Colors.white70,fontSize:12)),const SizedBox(height:17),Row(children:[FilledButton.icon(onPressed:onTap,style:FilledButton.styleFrom(backgroundColor:Colors.white,foregroundColor:ink),icon:const Icon(Icons.play_arrow),label:const Text('Xem ngay')),const SizedBox(width:10),OutlinedButton.icon(onPressed:onTap,style:OutlinedButton.styleFrom(foregroundColor:Colors.white,side:const BorderSide(color:Colors.white54)),icon:const Icon(Icons.info_outline),label:const Text('Chi tiết'))])]))])));}
+class MovieImage extends StatelessWidget {final String url;final BoxFit fit;const MovieImage({super.key,required this.url,this.fit=BoxFit.cover});@override Widget build(BuildContext context){if(url.isEmpty)return Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.movie_outlined,color:Colors.white38,size:32));return CachedNetworkImage(imageUrl:url,fit:fit,width:double.infinity,height:double.infinity,placeholder:(_,__)=>Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.image_outlined,color:Colors.white24)),errorWidget:(_,__,___)=>Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.movie_outlined,color:Colors.white38,size:32)));}}
+class MoviePoster extends StatelessWidget {final Movie movie;final VoidCallback onTap;const MoviePoster({super.key,required this.movie,required this.onTap});@override Widget build(BuildContext context)=>InkWell(onTap:onTap,borderRadius:BorderRadius.circular(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[AspectRatio(aspectRatio:2/3,child:ClipRRect(borderRadius:BorderRadius.circular(13),child:Stack(fit:StackFit.expand,children:[MovieImage(url:movie.poster),Positioned(left:6,bottom:6,child:Container(padding:const EdgeInsets.symmetric(horizontal:6,vertical:4),decoration:BoxDecoration(color:purple.withOpacity(.95),borderRadius:BorderRadius.circular(5)),child:Text(movie.quality,style:const TextStyle(color:Colors.white,fontSize:9,fontWeight:FontWeight.w900))))]))),const SizedBox(height:6),Text(movie.name,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:11,fontWeight:FontWeight.w800,height:1.2)),Text('\${movie.year??''} · \${movie.episode}',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:9,color:Theme.of(context).hintColor))]));}
+class MovieShelf extends StatelessWidget {final String title;final Future<List<Movie>> future;final ValueChanged<Movie> onOpen;const MovieShelf({super.key,required this.title,required this.future,required this.onOpen});@override Widget build(BuildContext context)=>Padding(padding:const EdgeInsets.only(top:18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(19,0,19,11),child:Text(title,style:const TextStyle(fontSize:19,fontWeight:FontWeight.w900))),SizedBox(height:244,child:FutureBuilder<List<Movie>>(future:future,builder:(c,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator(color:purple));final items=s.data??[];if(items.isEmpty)return const SizedBox.shrink();return ListView.separated(padding:const EdgeInsets.symmetric(horizontal:16),scrollDirection:Axis.horizontal,itemCount:items.length.clamp(0,18),separatorBuilder:(_,__)=>const SizedBox(width:11),itemBuilder:(c,i)=>SizedBox(width:132,child:MoviePoster(movie:items[i],onTap:()=>onOpen(items[i]))));}))]));}
+class CatalogPage extends StatelessWidget {final String type,title;final ValueChanged<Movie> onOpen;const CatalogPage({super.key,required this.type,required this.title,required this.onOpen});@override Widget build(BuildContext context)=>SafeArea(child:FutureBuilder<List<Movie>>(future:Api.list(type:type),builder:(c,s)=>CustomScrollView(slivers:[SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.fromLTRB(20,18,20,14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:27,fontWeight:FontWeight.w900)),Text('Khám phá những bộ phim mới nhất',style:TextStyle(color:Theme.of(context).hintColor,fontSize:12))]))),if(s.connectionState==ConnectionState.waiting)const SliverFillRemaining(child:Center(child:CircularProgressIndicator(color:purple))) else if(s.hasError)const SliverFillRemaining(child:Center(child:Text('Không tải được phim'))) else SliverPadding(padding:const EdgeInsets.fromLTRB(14,5,14,110),sliver:SliverGrid(delegate:SliverChildBuilderDelegate((c,i)=>MoviePoster(movie:s.data![i],onTap:()=>onOpen(s.data![i])),childCount:s.data?.length??0),gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:MediaQuery.sizeOf(context).width>700?5:3,childAspectRatio:.49,crossAxisSpacing:11,mainAxisSpacing:13)))])));}
+class SearchPage extends StatefulWidget {final ValueChanged<Movie> onOpen;const SearchPage({super.key,required this.onOpen});@override State<SearchPage> createState()=>_SearchPageState();}
+class _SearchPageState extends State<SearchPage>{final ctl=TextEditingController();Timer? debounce;Future<List<Movie>>? results;@override void dispose(){debounce?.cancel();ctl.dispose();super.dispose();}void search(String q){debounce?.cancel();if(q.trim().length<2){setState(()=>results=null);return;}debounce=Timer(const Duration(milliseconds:450),(){if(mounted)setState(()=>results=Api.list(q:q));});}@override Widget build(BuildContext context)=>SafeArea(child:Column(children:[Padding(padding:const EdgeInsets.fromLTRB(17,16,17,12),child:TextField(controller:ctl,onChanged:search,decoration:InputDecoration(hintText:'Tìm tên phim, diễn viên...',prefixIcon:const Icon(Icons.search,color:purple),suffixIcon:IconButton(onPressed:(){ctl.clear();search('');},icon:const Icon(Icons.close)),filled:true,fillColor:Theme.of(context).cardColor,border:OutlineInputBorder(borderRadius:BorderRadius.circular(18),borderSide:BorderSide.none)))),Expanded(child:results==null?Center(child:Text('Nhập ít nhất 2 ký tự để tìm phim',style:TextStyle(color:Theme.of(context).hintColor))):FutureBuilder<List<Movie>>(future:results,builder:(c,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator(color:purple));final items=s.data??[];if(items.isEmpty)return const Center(child:Text('Không tìm thấy phim'));return GridView.builder(padding:const EdgeInsets.fromLTRB(14,4,14,110),itemCount:items.length,gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:MediaQuery.sizeOf(context).width>700?5:3,childAspectRatio:.49,crossAxisSpacing:11,mainAxisSpacing:13),itemBuilder:(c,i)=>MoviePoster(movie:items[i],onTap:()=>widget.onOpen(items[i])));} ))]));}
+class AccountPage extends StatefulWidget {final ValueChanged<Movie> onOpen;final VoidCallback onTheme;const AccountPage({super.key,required this.onOpen,required this.onTheme});@override State<AccountPage> createState()=>_AccountPageState();}
+class _AccountPageState extends State<AccountPage>{late Future<List<Map<String,dynamic>>> fav=Library.read('xf_favorites');late Future<List<Map<String,dynamic>>> history=Library.read('xf_history');Future<void> refresh()async{setState((){fav=Library.read('xf_favorites');history=Library.read('xf_history');});await Future.wait([fav,history]);}Movie from(Map<String,dynamic> j)=>Movie({'slug':j['slug'],'name':j['name'],'poster':j['poster'],'backdrop':j['backdrop'],'year':j['year'],'quality':j['quality'],'language':j['language'],'currentEpisode':j['episode']});@override Widget build(BuildContext context)=>SafeArea(child:RefreshIndicator(color:purple,onRefresh:refresh,child:ListView(padding:const EdgeInsets.fromLTRB(18,18,18,115),children:[const Text('Tài khoản',style:TextStyle(fontSize:28,fontWeight:FontWeight.w900)),Text('Thư viện cá nhân trên thiết bị này',style:TextStyle(color:Theme.of(context).hintColor)),const SizedBox(height:17),Container(padding:const EdgeInsets.all(17),decoration:BoxDecoration(borderRadius:BorderRadius.circular(22),gradient:const LinearGradient(colors:[Color(0xFF352452),Color(0xFF191426)]),border:Border.all(color:purple.withOpacity(.3))),child:const Row(children:[CircleAvatar(radius:25,backgroundColor:Color(0xFF7650D8),child:Icon(Icons.person,color:Colors.white)),SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Khách xem phim',style:TextStyle(color:Colors.white,fontWeight:FontWeight.w900,fontSize:16)),Text('Yêu thích và lịch sử lưu trên thiết bị',style:TextStyle(color:Colors.white60,fontSize:11))]))])),const SizedBox(height:12),Card(child:ListTile(leading:const Icon(Icons.palette_outlined,color:purple),title:const Text('Giao diện sáng / tối'),trailing:const Icon(Icons.chevron_right),onTap:widget.onTheme)),const SizedBox(height:22),const Text('Phim yêu thích',style:TextStyle(fontSize:18,fontWeight:FontWeight.w900)),const SizedBox(height:10),FutureBuilder<List<Map<String,dynamic>>>(future:fav,builder:(c,s){final a=s.data??[];if(a.isEmpty)return const Text('Chưa có phim yêu thích');return SizedBox(height:220,child:ListView.separated(scrollDirection:Axis.horizontal,itemCount:a.length,separatorBuilder:(_,__)=>const SizedBox(width:11),itemBuilder:(c,i)=>SizedBox(width:125,child:MoviePoster(movie:from(a[i]),onTap:()=>widget.onOpen(from(a[i]))))));}),const SizedBox(height:22),const Text('Lịch sử xem',style:TextStyle(fontSize:18,fontWeight:FontWeight.w900)),FutureBuilder<List<Map<String,dynamic>>>(future:history,builder:(c,s){final a=s.data??[];if(a.isEmpty)return const Padding(padding:EdgeInsets.only(top:10),child:Text('Lịch sử xem sẽ xuất hiện tại đây'));return Column(children:a.take(15).map((e)=>ListTile(contentPadding:EdgeInsets.zero,leading:SizedBox(width:46,height:64,child:ClipRRect(borderRadius:BorderRadius.circular(7),child:MovieImage(url:'\${e['poster']??''}'))),title:Text('\${e['name']??'Phim'}',maxLines:1,overflow:TextOverflow.ellipsis),subtitle:Text('\${e['episode']??''} · \${formatTime((e['seconds'] as num?)?.toInt()??0)}'),onTap:()=>widget.onOpen(from(e)))).toList());})])));}
+class DetailPage extends StatefulWidget {final Movie movie;const DetailPage({super.key,required this.movie});@override State<DetailPage> createState()=>_DetailPageState();}
+class _DetailPageState extends State<DetailPage>{late Future<Film> future;bool saved=false;@override void initState(){super.initState();future=Api.detail(widget.movie.slug);Library.read('xf_favorites').then((a){if(mounted)setState(()=>saved=a.any((e)=>e['slug']==widget.movie.slug));});}Future<void> toggle()async{final v=await Library.favorite(widget.movie);if(mounted)setState(()=>saved=v);}void episodes(Film film){showDialog(context:context,builder:(d)=>Dialog.fullscreen(backgroundColor:Theme.of(context).scaffoldBackgroundColor,child:SafeArea(child:Column(children:[Padding(padding:const EdgeInsets.all(14),child:Row(children:[IconButton(onPressed:()=>Navigator.pop(d),icon:const Icon(Icons.close)),Expanded(child:Text('Chọn tập · \${film.name}',style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17)))])),Expanded(child:ListView(padding:const EdgeInsets.all(16),children:[for(final server in film.servers)...[Padding(padding:const EdgeInsets.symmetric(vertical:12),child:Text(server.name,style:const TextStyle(color:Color(0xFFC5AEFF),fontWeight:FontWeight.w900))),Wrap(spacing:8,runSpacing:8,children:[for(final ep in server.episodes)SizedBox(width:78,child:FilledButton.tonal(onPressed:(){Navigator.pop(d);Navigator.push(context,MaterialPageRoute(builder:(_)=>PlayerPage(movie:widget.movie,episode:ep,servers:film.servers)));},child:Text(ep.name,maxLines:1,overflow:TextOverflow.ellipsis)))])]]))]))));}@override Widget build(BuildContext context)=>Scaffold(body:FutureBuilder<Film>(future:future,builder:(c,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator(color:purple));if(s.hasError||!s.hasData)return Center(child:TextButton(onPressed:()=>setState(()=>future=Api.detail(widget.movie.slug)),child:const Text('Không tải được phim · Thử lại')));final f=s.data!;return CustomScrollView(slivers:[SliverAppBar(expandedHeight:490,pinned:true,backgroundColor:bg,leading:IconButton(onPressed:()=>Navigator.pop(context),icon:const Icon(Icons.arrow_back)),actions:[IconButton(onPressed:toggle,icon:Icon(saved?Icons.bookmark:Icons.bookmark_border,color:saved?const Color(0xFFC5AEFF):Colors.white))],flexibleSpace:FlexibleSpaceBar(background:Stack(fit:StackFit.expand,children:[MovieImage(url:f.backdrop.isEmpty?widget.movie.poster:f.backdrop),const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0x22000000),Color(0xF0090811)],stops:[.3,1]))),Positioned(left:20,right:20,bottom:25,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('THÔNG TIN PHIM',style:TextStyle(color:Color(0xFFC5AEFF),letterSpacing:2,fontSize:10,fontWeight:FontWeight.w900)),const SizedBox(height:10),Text(f.name,maxLines:3,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:30,fontWeight:FontWeight.w900,height:1.05,color:Colors.white)),const SizedBox(height:8),Text([f.year?.toString(),f.quality,f.language,f.time].where((e)=>e!=null&&e!.isNotEmpty).join(' • '),style:const TextStyle(color:Colors.white70,fontSize:12)),const SizedBox(height:16),Row(children:[FilledButton.icon(onPressed:()=>episodes(f),icon:const Icon(Icons.play_arrow),label:const Text('Xem phim'),style:FilledButton.styleFrom(backgroundColor:purple)),const SizedBox(width:9),OutlinedButton.icon(onPressed:toggle,icon:Icon(saved?Icons.bookmark:Icons.add),label:Text(saved?'Đã lưu':'Yêu thích'),style:OutlinedButton.styleFrom(foregroundColor:Colors.white,side:const BorderSide(color:Colors.white54)))])]))]))),SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.fromLTRB(20,20,20,115),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[if(f.categories.isNotEmpty||f.countries.isNotEmpty)Wrap(spacing:7,runSpacing:7,children:[...f.categories,...f.countries].map((t)=>Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:6),decoration:BoxDecoration(borderRadius:BorderRadius.circular(18),border:Border.all(color:purple.withOpacity(.5))),child:Text(t,style:const TextStyle(color:Color(0xFFC5AEFF),fontSize:10)))).toList()),const SizedBox(height:18),const Text('NỘI DUNG',style:TextStyle(color:Color(0xFFC5AEFF),fontWeight:FontWeight.w900)),const SizedBox(height:8),Text(f.content.replaceAll(RegExp(r'<[^>]*>'),' ').replaceAll(RegExp(r'\\s+'),' ').trim(),style:const TextStyle(height:1.65)),if(f.directors.isNotEmpty)Padding(padding:const EdgeInsets.only(top:15),child:Text('Đạo diễn: \${f.directors.join(', ')}')),if(f.actors.isNotEmpty)Padding(padding:const EdgeInsets.only(top:10),child:Text('Diễn viên: \${f.actors.take(12).join(', ')}')),if(f.trailer.isNotEmpty)Padding(padding:const EdgeInsets.only(top:16),child:OutlinedButton.icon(onPressed:()=>web.window.open(f.trailer,'_blank'),icon:const Icon(Icons.ondemand_video),label:const Text('Xem trailer'))),const SizedBox(height:22),Text('Danh sách tập · \${f.servers.fold<int>(0,(n,s)=>n+s.episodes.length)} tập',style:const TextStyle(fontSize:18,fontWeight:FontWeight.w900)),const SizedBox(height:9),FilledButton.tonalIcon(onPressed:()=>episodes(f),icon:const Icon(Icons.list),label:const Text('Chọn tập và máy chủ'))])))]);}));}
+class PlayerPage extends StatefulWidget {final Movie movie;final Episode episode;final List<MovieServer> servers;const PlayerPage({super.key,required this.movie,required this.episode,required this.servers});@override State<PlayerPage> createState()=>_PlayerPageState();}
+class _PlayerPageState extends State<PlayerPage>{VideoPlayerController? player;String? error;bool controls=true,muted=false,rotated=false,fullscreen=false,seeking=false;double volume=1,position=0,speed=1;Timer? hideTimer;int lastSaved=-1;
+@override void initState(){super.initState();SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);if(widget.episode.m3u8.isNotEmpty){player=VideoPlayerController.networkUrl(Uri.parse(widget.episode.m3u8));player!.addListener(changed);player!.initialize().then((_){if(!mounted)return;setState((){});player!.play();scheduleHide();}).catchError((_){if(mounted)setState(()=>error='Nguồn phim không phát được. Hãy thử server khác.');});}else{error='Nguồn này dùng trình phát nhúng.';}}
+void changed(){final p=player;if(!mounted||p==null||!p.value.isInitialized)return;if(!seeking)setState(()=>position=p.value.position.inMilliseconds.toDouble());final sec=p.value.position.inSeconds;if(sec>0&&sec%10==0&&sec!=lastSaved){lastSaved=sec;Library.progress(widget.movie,widget.episode.name,sec);}}
+void scheduleHide(){hideTimer?.cancel();hideTimer=Timer(const Duration(seconds:4),(){if(mounted&&player?.value.isPlaying==true)setState(()=>controls=false);});}
+void toggleControls(){setState(()=>controls=!controls);if(controls)scheduleHide();}
+Future<void> seek(int seconds)async{final p=player;if(p==null||!p.value.isInitialized)return;final t=p.value.position+Duration(seconds:seconds);await p.seekTo(t<Duration.zero?Duration.zero:t>p.value.duration?p.value.duration:t);scheduleHide();}
+void full(){try{if(web.document.fullscreenElement!=null){web.document.exitFullscreen();fullscreen=false;}else{web.document.documentElement?.requestFullscreen();fullscreen=true;}setState((){});}catch(_){}}
+void picker(){showDialog(context:context,builder:(d)=>Dialog.fullscreen(backgroundColor:ink,child:SafeArea(child:Column(children:[Padding(padding:const EdgeInsets.all(14),child:Row(children:[IconButton(onPressed:()=>Navigator.pop(d),icon:const Icon(Icons.close)),Expanded(child:Text(widget.movie.name,style:const TextStyle(fontWeight:FontWeight.w900)))])),Expanded(child:ListView(padding:const EdgeInsets.all(16),children:[for(final s in widget.servers)...[Padding(padding:const EdgeInsets.symmetric(vertical:12),child:Text(s.name,style:const TextStyle(color:Color(0xFFC5AEFF),fontWeight:FontWeight.w900))),Wrap(spacing:8,runSpacing:8,children:[for(final e in s.episodes)SizedBox(width:78,child:FilledButton.tonal(onPressed:(){Navigator.pop(d);Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>PlayerPage(movie:widget.movie,episode:e,servers:widget.servers)));},child:Text(e.name)))])]]))]))));}
+@override void dispose(){hideTimer?.cancel();final p=player;if(p!=null){if(p.value.isInitialized)Library.progress(widget.movie,widget.episode.name,p.value.position.inSeconds);p.removeListener(changed);p.dispose();}SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);super.dispose();}
+@override Widget build(BuildContext context){final p=player;final ready=p?.value.isInitialized==true;final dur=ready?p!.value.duration:Duration.zero;final pos=ready?p!.value.position:Duration.zero;final playing=ready&&p!.value.isPlaying;return Scaffold(backgroundColor:Colors.black,appBar:AppBar(backgroundColor:Colors.black,foregroundColor:Colors.white,title:Text(widget.movie.name,maxLines:1,overflow:TextOverflow.ellipsis),actions:[IconButton(onPressed:picker,icon:const Icon(Icons.video_library_outlined)),if(widget.episode.embed.isNotEmpty)IconButton(onPressed:()=>web.window.open(widget.episode.embed,'_blank'),icon:const Icon(Icons.open_in_new))]),body:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:1200),child:AspectRatio(aspectRatio:rotated?9/16:16/9,child:ready?GestureDetector(behavior:HitTestBehavior.opaque,onTap:toggleControls,child:Stack(fit:StackFit.expand,children:[Center(child:RotatedBox(quarterTurns:rotated?1:0,child:AspectRatio(aspectRatio:p!.value.aspectRatio,child:VideoPlayer(p)))),if(controls)DecoratedBox(decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xAA000000),Colors.transparent,Color(0xD9000000)],stops:[0,.43,1])),child:Column(children:[Padding(padding:const EdgeInsets.fromLTRB(10,2,4,0),child:Row(children:[Expanded(child:Text('\${widget.episode.name} · \${widget.movie.name}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Colors.white,fontSize:12,fontWeight:FontWeight.w700))),IconButton(onPressed:picker,icon:const Icon(Icons.video_library_outlined,color:Colors.white)),IconButton(onPressed:()=>setState(()=>rotated=!rotated),icon:const Icon(Icons.screen_rotation_alt,color:Colors.white)),IconButton(onPressed:full,icon:Icon(fullscreen?Icons.fullscreen_exit:Icons.fullscreen,color:Colors.white))])),const Spacer(),Row(mainAxisAlignment:MainAxisAlignment.center,children:[IconButton(iconSize:38,onPressed:()=>seek(-10),icon:const Icon(Icons.replay_10,color:Colors.white)),const SizedBox(width:18),IconButton(iconSize:60,onPressed:(){setState(()=>playing?p!.pause():p!.play());scheduleHide();},icon:Icon(playing?Icons.pause_circle_filled:Icons.play_circle_fill,color:Colors.white)),const SizedBox(width:18),IconButton(iconSize:38,onPressed:()=>seek(10),icon:const Icon(Icons.forward_10,color:Colors.white))]),const Spacer(),Padding(padding:const EdgeInsets.fromLTRB(12,0,12,10),child:Column(children:[Slider(min:0,max:(dur.inMilliseconds>0?dur.inMilliseconds:1).toDouble(),value:position.clamp(0,(dur.inMilliseconds>0?dur.inMilliseconds:1).toDouble()).toDouble(),onChangeStart:(_)=>setState(()=>seeking=true),onChanged:(v)=>setState(()=>position=v),onChangeEnd:(v){p!.seekTo(Duration(milliseconds:v.round()));setState(()=>seeking=false);scheduleHide();}),Row(children:[Text('\${formatTime(pos.inSeconds)} / \${formatTime(dur.inSeconds)}',style:const TextStyle(color:Colors.white70,fontSize:10)),const Spacer(),PopupMenuButton<double>(initialValue:speed,onSelected:(v){setState(()=>speed=v);p!.setPlaybackSpeed(v);},itemBuilder:(_)=>[.75,1,1.25,1.5,2].map((v)=>PopupMenuItem(value:v,child:Text('\${v}x'))).toList(),child:Text('\${speed}x',style:const TextStyle(color:Colors.white))),IconButton(onPressed:(){setState(()=>muted=!muted);p!.setVolume(muted?0:volume);},icon:Icon(muted?Icons.volume_off:Icons.volume_up,color:Colors.white)),SizedBox(width:80,child:Slider(min:0,max:1,value:muted?0:volume,onChanged:(v){setState(()=>volume=v);p!.setVolume(v);}))])]))]))])):Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[if(error==null)const CircularProgressIndicator(color:purple),if(error!=null)...[const Icon(Icons.play_circle_outline,color:purple,size:48),const SizedBox(height:12),Text(error!,textAlign:TextAlign.center,style:const TextStyle(color:Colors.white70)),if(widget.episode.embed.isNotEmpty)Padding(padding:const EdgeInsets.only(top:16),child:FilledButton.icon(onPressed:()=>web.window.open(widget.episode.embed,'_blank'),icon:const Icon(Icons.open_in_new),label:const Text('Mở trình phát')))]])))));}
+}
+String formatTime(int seconds){final v=seconds<0?0:seconds;final h=v~/3600,m=(v%3600)~/60,s=v%60;return h>0?'\$h:\${m.toString().padLeft(2,'0')}:\${s.toString().padLeft(2,'0')}':'\$m:\${s.toString().padLeft(2,'0')}';}
