@@ -1,1 +1,1 @@
-{"name":"webxemphim","private":true,"version":"1.0.0","scripts":{"build":"git clone --depth 1 -b stable https://github.com/flutter/flutter.git /tmp/flutter && export PATH=\"/tmp/flutter/bin:$PATH\" && flutter config --enable-web && flutter pub get && flutter build web --release"}}
+{"name":"webxemphim","private":true,"version":"1.0.0","scripts":{"build":"git clone --depth 1 -b stable https://github.com/flutter/flutter.git /tmp/flutter && export PATH=\"/tmp/flutter/bin:$PATH\" && flutter config --enable-web && flutter pub get && flutter build web --release --wasm"}}
