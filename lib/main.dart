@@ -103,14 +103,14 @@ class GlassDock extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(27),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
             height: 74,
             decoration: BoxDecoration(
               color: dark ? const Color(0xC91D1729) : const Color(0xDDFBF9FF),
               borderRadius: BorderRadius.circular(27),
               border: Border.all(color: dark ? Colors.white24 : purple.withOpacity(.22)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.22), blurRadius: 25, offset: const Offset(0, 8))],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.22), blurRadius: 14, offset: const Offset(0, 5))],
             ),
             child: Stack(
               children: [
@@ -195,10 +195,69 @@ class _HomePageState extends State<HomePage>{
   ]));
 }
 class HeroCard extends StatelessWidget {final Movie movie;final VoidCallback onTap;const HeroCard({super.key,required this.movie,required this.onTap});@override Widget build(BuildContext context)=>GestureDetector(onTap:onTap,child:ClipRRect(borderRadius:BorderRadius.circular(27),child:Stack(fit:StackFit.expand,children:[MovieImage(url:movie.backdrop.isEmpty?movie.poster:movie.backdrop),const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0x22100A20),Color(0xF0090811)],stops:[.2,1]))),Positioned(left:22,right:20,bottom:26,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('ĐỀ XUẤT HÔM NAY',style:TextStyle(color:Color(0xFFC5AEFF),fontSize:10,letterSpacing:2,fontWeight:FontWeight.w900)),const SizedBox(height:10),Text(movie.name,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:30,height:1.05,fontWeight:FontWeight.w900,color:Colors.white)),const SizedBox(height:9),Text('${movie.year??''}  •  ${movie.quality}  •  ${movie.language}',style:const TextStyle(color:Colors.white70,fontSize:12)),const SizedBox(height:17),Row(children:[FilledButton.icon(onPressed:onTap,style:FilledButton.styleFrom(backgroundColor:Colors.white,foregroundColor:bg),icon:const Icon(Icons.play_arrow),label:const Text('Xem ngay')),const SizedBox(width:10),OutlinedButton.icon(onPressed:onTap,style:OutlinedButton.styleFrom(foregroundColor:Colors.white,side:const BorderSide(color:Colors.white54)),icon:const Icon(Icons.info_outline),label:const Text('Chi tiết'))])]))])));}
-class MovieImage extends StatelessWidget {final String url;final BoxFit fit;const MovieImage({super.key,required this.url,this.fit=BoxFit.cover});@override Widget build(BuildContext context){if(url.isEmpty)return Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.movie_outlined,color:Colors.white38,size:32));return CachedNetworkImage(imageUrl:url,fit:fit,width:double.infinity,height:double.infinity,placeholder:(_,__)=>Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.image_outlined,color:Colors.white24)),errorWidget:(_,__,___)=>Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.movie_outlined,color:Colors.white38,size:32)));}}
+class MovieImage extends StatelessWidget {final String url;final BoxFit fit;const MovieImage({super.key,required this.url,this.fit=BoxFit.cover});@override Widget build(BuildContext context){if(url.isEmpty)return Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.movie_outlined,color:Colors.white38,size:32));return CachedNetworkImage(imageUrl:url,fit:fit,width:double.infinity,height:double.infinity,memCacheWidth: fit == BoxFit.cover ? 1200 : 420,memCacheHeight: fit == BoxFit.cover ? 800 : 630,fadeInDuration: const Duration(milliseconds: 120),placeholder:(_,__)=>Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.image_outlined,color:Colors.white24)),errorWidget:(_,__,___)=>Container(color:panel,alignment:Alignment.center,child:const Icon(Icons.movie_outlined,color:Colors.white38,size:32)));}}
 class MoviePoster extends StatelessWidget {final Movie movie;final VoidCallback onTap;const MoviePoster({super.key,required this.movie,required this.onTap});@override Widget build(BuildContext context)=>InkWell(onTap:onTap,borderRadius:BorderRadius.circular(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[AspectRatio(aspectRatio:2/3,child:ClipRRect(borderRadius:BorderRadius.circular(13),child:Stack(fit:StackFit.expand,children:[MovieImage(url:movie.poster),Positioned(left:6,bottom:6,child:Container(padding:const EdgeInsets.symmetric(horizontal:6,vertical:4),decoration:BoxDecoration(color:purple.withOpacity(.95),borderRadius:BorderRadius.circular(5)),child:Text(movie.quality,style:const TextStyle(color:Colors.white,fontSize:9,fontWeight:FontWeight.w900))))]))),const SizedBox(height:6),Text(movie.name,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:11,fontWeight:FontWeight.w800,height:1.2)),Text('${movie.year??''} · ${movie.episode}',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:9,color:Theme.of(context).hintColor))]));}
 class MovieShelf extends StatelessWidget {final String title;final Future<List<Movie>> future;final ValueChanged<Movie> onOpen;const MovieShelf({super.key,required this.title,required this.future,required this.onOpen});@override Widget build(BuildContext context)=>Padding(padding:const EdgeInsets.only(top:18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Padding(padding:const EdgeInsets.fromLTRB(19,0,19,11),child:Text(title,style:const TextStyle(fontSize:19,fontWeight:FontWeight.w900))),SizedBox(height:244,child:FutureBuilder<List<Movie>>(future:future,builder:(c,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator(color:purple));final items=s.data??[];if(items.isEmpty)return const SizedBox.shrink();return ListView.separated(padding:const EdgeInsets.symmetric(horizontal:16),scrollDirection:Axis.horizontal,itemCount:items.length.clamp(0,18),separatorBuilder:(_,__)=>const SizedBox(width:11),itemBuilder:(c,i)=>SizedBox(width:132,child:MoviePoster(movie:items[i],onTap:()=>onOpen(items[i]))));}))]));}
-class CatalogPage extends StatelessWidget {final String type,title;final ValueChanged<Movie> onOpen;const CatalogPage({super.key,required this.type,required this.title,required this.onOpen});@override Widget build(BuildContext context)=>SafeArea(child:FutureBuilder<List<Movie>>(future:Api.list(type:type),builder:(c,s)=>CustomScrollView(slivers:[SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.fromLTRB(20,18,20,14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:27,fontWeight:FontWeight.w900)),Text('Khám phá những bộ phim mới nhất',style:TextStyle(color:Theme.of(context).hintColor,fontSize:12))]))),if(s.connectionState==ConnectionState.waiting)const SliverFillRemaining(child:Center(child:CircularProgressIndicator(color:purple))) else if(s.hasError)const SliverFillRemaining(child:Center(child:Text('Không tải được phim'))) else SliverPadding(padding:const EdgeInsets.fromLTRB(14,5,14,110),sliver:SliverGrid(delegate:SliverChildBuilderDelegate((c,i)=>MoviePoster(movie:s.data![i],onTap:()=>onOpen(s.data![i])),childCount:s.data?.length??0),gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:MediaQuery.sizeOf(context).width>700?5:3,childAspectRatio:.49,crossAxisSpacing:11,mainAxisSpacing:13)))])));}
+class CatalogPage extends StatefulWidget {
+  final String type, title;
+  final ValueChanged<Movie> onOpen;
+  const CatalogPage({super.key, required this.type, required this.title, required this.onOpen});
+  @override
+  State<CatalogPage> createState() => _CatalogPageState();
+}
+
+class _CatalogPageState extends State<CatalogPage> {
+  late Future<List<Movie>> future;
+
+  @override
+  void initState() {
+    super.initState();
+    future = Api.list(type: widget.type);
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: FutureBuilder<List<Movie>>(
+      future: future,
+      builder: (context, snapshot) => CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.title, style: const TextStyle(fontSize: 27, fontWeight: FontWeight.w900)),
+                  Text('Khám phá những bộ phim mới nhất', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+          if (snapshot.connectionState == ConnectionState.waiting)
+            const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: purple)))
+          else if (snapshot.hasError)
+            const SliverFillRemaining(child: Center(child: Text('Không tải được phim')))
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(14, 5, 14, 110),
+              sliver: SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => MoviePoster(movie: snapshot.data![index], onTap: () => widget.onOpen(snapshot.data![index])),
+                  childCount: snapshot.data?.length ?? 0,
+                ),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: MediaQuery.sizeOf(context).width > 700 ? 5 : 3,
+                  childAspectRatio: .49,
+                  crossAxisSpacing: 11,
+                  mainAxisSpacing: 13,
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
 class SearchPage extends StatefulWidget {final ValueChanged<Movie> onOpen;const SearchPage({super.key,required this.onOpen});@override State<SearchPage> createState()=>_SearchPageState();}
 class _SearchPageState extends State<SearchPage>{final ctl=TextEditingController();Timer? debounce;Future<List<Movie>>? results;@override void dispose(){debounce?.cancel();ctl.dispose();super.dispose();}void search(String q){debounce?.cancel();if(q.trim().length<2){setState(()=>results=null);return;}debounce=Timer(const Duration(milliseconds:450),(){if(mounted)setState(()=>results=Api.list(q:q));});}@override Widget build(BuildContext context)=>SafeArea(child:Column(children:[Padding(padding:const EdgeInsets.fromLTRB(17,16,17,12),child:TextField(controller:ctl,onChanged:search,decoration:InputDecoration(hintText:'Tìm tên phim, diễn viên...',prefixIcon:const Icon(Icons.search,color:purple),suffixIcon:IconButton(onPressed:(){ctl.clear();search('');},icon:const Icon(Icons.close)),filled:true,fillColor:Theme.of(context).cardColor,border:OutlineInputBorder(borderRadius:BorderRadius.circular(18),borderSide:BorderSide.none)))),Expanded(child:results==null?Center(child:Text('Nhập ít nhất 2 ký tự để tìm phim',style:TextStyle(color:Theme.of(context).hintColor))):FutureBuilder<List<Movie>>(future:results,builder:(c,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator(color:purple));final items=s.data??[];if(items.isEmpty)return const Center(child:Text('Không tìm thấy phim'));return GridView.builder(padding:const EdgeInsets.fromLTRB(14,4,14,110),itemCount:items.length,gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:MediaQuery.sizeOf(context).width>700?5:3,childAspectRatio:.49,crossAxisSpacing:11,mainAxisSpacing:13),itemBuilder:(c,i)=>MoviePoster(movie:items[i],onTap:()=>widget.onOpen(items[i])));} ))]));}
 class AccountPage extends StatefulWidget {final ValueChanged<Movie> onOpen;final VoidCallback onTheme;const AccountPage({super.key,required this.onOpen,required this.onTheme});@override State<AccountPage> createState()=>_AccountPageState();}
@@ -221,6 +280,7 @@ class _PlayerPageState extends State<PlayerPage> {
   double volume = 1, position = 0, speed = 1;
   Timer? hideTimer;
   int lastSaved = -1;
+  int lastUiSecond = -1;
 
   @override
   void initState() {
@@ -245,8 +305,11 @@ class _PlayerPageState extends State<PlayerPage> {
   void _videoChanged() {
     final p = player;
     if (!mounted || p == null || !p.value.isInitialized) return;
-    if (!seeking) setState(() => position = p.value.position.inMilliseconds.toDouble());
     final seconds = p.value.position.inSeconds;
+    if (!seeking && seconds != lastUiSecond) {
+      lastUiSecond = seconds;
+      setState(() => position = p.value.position.inMilliseconds.toDouble());
+    }
     if (seconds > 0 && seconds % 10 == 0 && seconds != lastSaved) {
       lastSaved = seconds;
       Library.progress(widget.movie, widget.episode.name, seconds);

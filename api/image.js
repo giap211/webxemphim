@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
     if (!type.startsWith("image/")) return res.status(415).send("Not an image");
     const bytes = Buffer.from(await upstream.arrayBuffer());
     res.setHeader("Content-Type", type);
-    res.setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
+    res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800");
     res.setHeader("Access-Control-Allow-Origin", "*");
     return res.status(200).send(bytes);
   } catch (error) {
