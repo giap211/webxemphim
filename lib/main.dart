@@ -15,6 +15,7 @@ String appImage(String raw) {
  if (value.startsWith('/api/image?')) return Uri.base.resolve(value).toString();
  String absolute = value;
  if (absolute.startsWith('//')) absolute = 'https:$absolute';
+ if (absolute.startsWith('http://')) absolute = 'https://${absolute.substring(7)}';
  if (!absolute.startsWith('http://') && !absolute.startsWith('https://')) {
   absolute = 'https://phimimg.com/${absolute.replaceFirst(RegExp(r'^/+'), '')}';
  }
@@ -366,7 +367,7 @@ class _PlayerPageState extends State<PlayerPage> {
                      child:Slider(
                       min:0,
                       max:(duration.inMilliseconds>0?duration.inMilliseconds:1).toDouble(),
-                      value:seekValue.clamp(0,(duration.inMilliseconds>0?duration.inMilliseconds:1).toDouble()),
+                      value:seekValue.clamp(0,(duration.inMilliseconds>0?duration.inMilliseconds:1).toDouble()).toDouble(),
                       onChangeStart:(_)=>setState(()=>seeking=true),
                       onChanged:(v)=>setState(()=>seekValue=v),
                       onChangeEnd:(v){p!.seekTo(Duration(milliseconds:v.round()));setState(()=>seeking=false);},
