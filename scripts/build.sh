@@ -15,4 +15,4 @@ if ! command -v trunk >/dev/null 2>&1; then
   cargo install trunk --locked --version 0.21.14
 fi
 
-trunk build --release --dist-dir dist
+trunk build --release --dist dist
