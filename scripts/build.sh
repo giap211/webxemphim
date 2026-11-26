@@ -12,7 +12,7 @@ export PATH="$CARGO_HOME/bin:$PATH"
 rustup target add wasm32-unknown-unknown
 
 if ! command -v trunk >/dev/null 2>&1; then
-  cargo install trunk --locked
+  cargo install trunk --locked --version 0.21.14
 fi
 
 trunk build --release --dist-dir dist
