@@ -53,3 +53,35 @@ body{font-family:'DM Sans',sans-serif;background:#08090d}
 @media(min-width:1100px){.hero-card-wrap{padding-left:5vw;padding-right:5vw}.hero-card{max-width:1500px;min-height:620px;border-radius:28px}.hero-card-content{left:52px;bottom:116px}.hero-card-content h1{font-size:58px}.catalog{padding-left:5vw;padding-right:5vw}.card{flex-basis:180px;width:180px}}
 @media(max-width:480px){.hero-card-wrap{padding:8px 12px 5px}.hero-card{min-height:520px;min-height:min(66svh,610px);min-height:max(500px,min(66svh,610px));border-radius:24px}.hero-card-content{left:18px;right:18px;bottom:94px}.hero-card-content h1{font-size:clamp(29px,8vw,40px)}.hero-card-content p{font-size:11px}.hero-thumbs{right:14px;bottom:14px;gap:5px}.hero-thumbs button{width:33px;height:47px}.catalog{padding:18px 14px 28px}.heading h2{font-size:19px}.dock{bottom:max(9px,env(safe-area-inset-bottom));width:calc(100% - 24px)}}
 @media(prefers-reduced-motion:reduce){.hero-thumbs button,.card,.dock button{transition:none!important}}
+
+
+/* XemPhim identity + unified GT-inspired home shelves */
+.top { align-items:center; }
+.brand { gap:10px; text-shadow:none; }
+.brand b { width:38px;height:38px;border-radius:13px;color:#171020;font:800 12px 'Space Grotesk';letter-spacing:-1px; }
+.brand-copy { display:flex;flex-direction:column;gap:1px;color:#fff!important;font:800 18px 'Space Grotesk';letter-spacing:-.045em;line-height:1.05; }
+.brand-copy small { color:rgba(255,255,255,.62);font:600 8px 'DM Sans';letter-spacing:.035em; }
+.topic-strip { max-width:1500px;margin:0 auto;padding:12px 18px 10px; }
+.topic-heading { margin:0 2px 10px;font:700 17px 'Space Grotesk';letter-spacing:-.035em;color:#f5f3fa; }
+.topic-list { display:flex;gap:8px;overflow-x:auto;padding:1px 1px 7px;scrollbar-width:none;-webkit-overflow-scrolling:touch; }
+.topic-list::-webkit-scrollbar,.shelf-track::-webkit-scrollbar { display:none; }
+.topic-list a { flex:0 0 auto;padding:9px 14px;border-radius:999px;border:1px solid rgba(190,160,255,.24);background:linear-gradient(120deg,rgba(174,142,255,.13),rgba(255,255,255,.035));color:#d8c9fa;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap;transition:background .2s,border-color .2s; }
+.topic-list a:active { background:rgba(174,142,255,.25);border-color:#b69aff; }
+.home-shelf { max-width:1500px;margin:0 auto;padding:14px 18px 10px;scroll-margin-top:20px; }
+.shelf-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 12px; }
+.shelf-heading h2 { margin:0;color:#f5f3fa;font:750 clamp(17px,2.2vw,21px)/1.2 'Space Grotesk';letter-spacing:-.04em; }
+.shelf-heading>a { flex:0 0 auto;color:#bba6f4;text-decoration:none;font-size:10px;font-weight:700;white-space:nowrap; }
+.shelf-heading>a span { font-size:17px;vertical-align:-1px; }
+.shelf-track { display:flex;gap:11px;overflow-x:auto;overflow-y:hidden;padding:2px 1px 12px;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch; }
+.shelf-card { flex:0 0 clamp(116px,38vw,166px);width:clamp(116px,38vw,166px);min-width:0;padding:0;border:0;background:none;color:#fff;text-align:left;scroll-snap-align:start; }
+.shelf-card .poster { aspect-ratio:2/3;border-radius:12px;overflow:hidden;position:relative;background:#211b30;border:1px solid rgba(190,160,255,.18); }
+.shelf-card .poster img { display:block;width:100%;height:100%;object-fit:cover; }
+.shelf-card .poster b { position:absolute;top:7px;left:7px;background:rgba(9,8,18,.78);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:4px 6px;color:#fff;font-size:8px; }
+.shelf-card .poster i { position:absolute;inset:0;display:grid;place-items:center;background:rgba(9,8,18,.28);opacity:0;color:#fff;font-style:normal;font-size:24px;transition:opacity .2s; }
+.shelf-card:active .poster i { opacity:1; }
+.shelf-card strong { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:8px 1px 2px;color:#f5f3fa;font-size:11px;font-weight:700; }
+.shelf-card>small { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0 1px;color:#9e97ad;font-size:9px; }
+.home-shelf + .home-shelf { padding-top:12px; }
+@media(min-width:700px) { .topic-strip,.home-shelf { padding-left:28px;padding-right:28px; } .shelf-card { flex-basis:165px;width:165px; } .shelf-track { gap:14px; } }
+@media(min-width:1100px) { .topic-strip,.home-shelf { padding-left:5vw;padding-right:5vw; } .shelf-card { flex-basis:180px;width:180px; } }
+@media(max-width:480px) { .top { padding-left:14px;padding-right:14px; } .brand b { width:35px;height:35px; } .brand-copy { font-size:17px; } .brand-copy small { font-size:7px; } .topic-strip { padding:12px 14px 8px; } .topic-heading { font-size:16px; } .home-shelf { padding:12px 14px 8px; } .shelf-heading h2 { font-size:17px; } .shelf-card { flex-basis:clamp(112px,37vw,150px);width:clamp(112px,37vw,150px); } }
