@@ -1,0 +1,9 @@
+[package]
+name="webxemphim"
+version="0.1.0"
+edition="2021"
+[dependencies]
+leptos={version="0.8",features=["csr"]}
+gloo-net={version="0.6",features=["http"]}
+serde={version="1",features=["derive"]}
+wasm-bindgen-futures="0.4"
