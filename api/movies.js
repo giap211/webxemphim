@@ -11,10 +11,18 @@ module.exports = async (req, res) => {
   const params = new URL(req.url, "https://local").searchParams;
   const type = params.get("type") || "phim-moi-cap-nhat";
   const q = params.get("q"), page = params.get("page") || "1";
-  const path = q ? "/v1/api/tim-kiem?keyword=" + encodeURIComponent(q) + "&page=" + page : "/v1/api/danh-sach/" + encodeURIComponent(type) + "?page=" + page;
+  const [group, slug] = type.includes(":") ? type.split(":", 2) : ["danh-sach", type];
+  const path = q ? "/v1/api/tim-kiem?keyword=" + encodeURIComponent(q) + "&page=" + page
+    : group === "the-loai" ? "/v1/api/the-loai/" + encodeURIComponent(slug) + "?page=" + page
+    : group === "quoc-gia" ? "/v1/api/quoc-gia/" + encodeURIComponent(slug) + "?page=" + page
+    : "/v1/api/danh-sach/" + encodeURIComponent(type) + "?page=" + page;
   for (const base of SOURCES) {
     try {
-      const endpoint = q ? path : type === "phim-moi-cap-nhat" ? "/danh-sach/phim-moi-cap-nhat?page=" + page : path;
+      const isPhimApi = base.includes("phimapi.com");
+      const endpoint = q ? path : isPhimApi ? path
+        : group === "the-loai" ? "/v1/the-loai/" + encodeURIComponent(slug) + "?page=" + page
+        : group === "quoc-gia" ? "/v1/quoc-gia/" + encodeURIComponent(slug) + "?page=" + page
+        : type === "phim-moi-cap-nhat" ? "/danh-sach/phim-moi-cap-nhat?page=" + page : path;
       const r = await fetch(base + endpoint);
       if (!r.ok) continue;
       const j = await r.json(), d = j.data || j, cdn = d.APP_DOMAIN_CDN_IMAGE || j.pathImage || IMG;
