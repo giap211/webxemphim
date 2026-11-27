@@ -8,8 +8,8 @@ const image = (v, cdn) => {
 };
 const names = (items) => Array.isArray(items) ? items.map((v) => typeof v === "string" ? v : v?.name).filter(Boolean) : [];
 const cleanText = (value) => String(value || "")
-  .replace(/<br\\s*\\/?\\s*>/gi, "\\n")
-  .replace(/<\\/(p|div|li|h[1-6])\\s*>/gi, "\\n\\n")
+  .replace(/<br\s*\/?\s*>/gi, "\n")
+  .replace(/<\/(p|div|li|h[1-6])\s*>/gi, "\n\n")
   .replace(/<[^>]*>/g, " ")
   .replace(/&nbsp;/gi, " ")
   .replace(/&amp;/gi, "&")
@@ -17,9 +17,9 @@ const cleanText = (value) => String(value || "")
   .replace(/&#39;|&apos;/gi, "'")
   .replace(/&lt;/gi, "<")
   .replace(/&gt;/gi, ">")
-  .replace(/[ \\t]+/g, " ")
-  .replace(/\\n[ \\t]+/g, "\\n")
-  .replace(/\\n{3,}/g, "\\n\\n")
+  .replace(/[ \t]+/g, " ")
+  .replace(/\n[ \t]+/g, "\n")
+  .replace(/\n{3,}/g, "\n\n")
   .trim();
 module.exports = async (req, res) => {
   for (const base of SOURCES) {

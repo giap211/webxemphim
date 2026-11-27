@@ -7,3 +7,4 @@ leptos={version="0.8",features=["csr"]}
 gloo-net={version="0.6",features=["http"]}
 serde={version="1",features=["derive"]}
 wasm-bindgen-futures="0.4"
+web-sys = { version = "0.3", features = ["Window", "Location", "History"] }
